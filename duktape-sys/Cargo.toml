@@ -1,0 +1,25 @@
+[package]
+name = "duktape-sys"
+version = "0.0.1"
+authors = ["Skyler Lipthay <sl@skylerlipthay.com>"]
+repository = "https://github.com/SkylerLipthay/ducc"
+license = "MIT"
+
+[features]
+# Similar to `DUK_USE_EXEC_TIMEOUT_CHECK`.
+use-exec-timeout-check = []
+
+# Allows the compilation of a binary `ffi-gen` that creates bindings from the
+# `duktape` folder (see `src/ffi_gen.rs`).
+build-ffi-gen = ["bindgen"]
+
+[dependencies]
+bindgen = { version = "0.36", optional = true }
+
+[build-dependencies]
+cc = "1.0"
+
+[[bin]]
+name = "ffi-gen"
+path = "src/ffi_gen.rs"
+required-features = ["build-ffi-gen"]
