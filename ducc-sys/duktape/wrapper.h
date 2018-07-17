@@ -300,9 +300,9 @@ void duk_dump_context_stdout(duk_context *ctx);
 void duk_dump_context_stderr(duk_context *ctx);
 #pragma pop_macro("duk_dump_context_stderr")
 
-duk_idx_t rust_duk_push_c_function_nothrow(duk_context *ctx,
-    duk_c_function func, duk_idx_t nargs);
+duk_idx_t ducc_push_c_function_nothrow(duk_context *ctx, duk_c_function func,
+    duk_idx_t nargs);
 
-typedef duk_bool_t (*rust_duk_exec_timeout_function)(void *udata);
+typedef duk_bool_t (*ducc_exec_timeout_function)(void *udata);
 
-void rust_duk_set_exec_timeout_function(rust_duk_exec_timeout_function func);
+void ducc_set_exec_timeout_function(ducc_exec_timeout_function func);

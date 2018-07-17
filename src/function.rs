@@ -125,7 +125,7 @@ pub fn create_callback<'ducc, 'callback>(
     unsafe {
         assert_stack!(ducc.ctx, 0, {
             ffi::duk_require_stack(ducc.ctx, 2);
-            ffi::rust_duk_push_c_function_nothrow(ducc.ctx, Some(wrapper), ffi::DUK_VARARGS);
+            ffi::ducc_push_c_function_nothrow(ducc.ctx, Some(wrapper), ffi::DUK_VARARGS);
             ffi::duk_push_pointer(ducc.ctx, Box::into_raw(Box::new(func)) as *mut _);
             ffi::duk_put_prop_string(ducc.ctx, -2, FUNC.as_ptr());
             ffi::duk_push_c_function(ducc.ctx, Some(finalizer), 1);

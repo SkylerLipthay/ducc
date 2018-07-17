@@ -2146,16 +2146,16 @@ extern "C" {
     pub fn duk_dump_context_stderr(ctx: *mut duk_context);
 }
 extern "C" {
-    pub fn rust_duk_push_c_function_nothrow(
+    pub fn ducc_push_c_function_nothrow(
         ctx: *mut duk_context,
         func: duk_c_function,
         nargs: duk_idx_t,
     ) -> duk_idx_t;
 }
-pub type rust_duk_exec_timeout_function =
+pub type ducc_exec_timeout_function =
     ::std::option::Option<unsafe extern "C" fn(udata: *mut ::std::os::raw::c_void) -> duk_bool_t>;
 extern "C" {
-    pub fn rust_duk_set_exec_timeout_function(func: rust_duk_exec_timeout_function);
+    pub fn ducc_set_exec_timeout_function(func: ducc_exec_timeout_function);
 }
 pub type __builtin_va_list = [__va_list_tag; 1usize];
 #[repr(C)]

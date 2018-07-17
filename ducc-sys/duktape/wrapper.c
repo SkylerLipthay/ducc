@@ -433,7 +433,7 @@ duk_ret_t handle_func_nothrow(duk_context *ctx) {
   return duk_throw(ctx);
 }
 
-duk_idx_t rust_duk_push_c_function_nothrow(duk_context *ctx,
+duk_idx_t ducc_push_c_function_nothrow(duk_context *ctx,
     duk_c_function func, duk_idx_t nargs) {
   duk_require_stack(ctx, 2);
   duk_idx_t result = duk_push_c_function(ctx, handle_func_nothrow, nargs);
@@ -447,13 +447,12 @@ duk_bool_t default_exec_timeout_func(void *udata) {
   return 0;
 }
 
-static rust_duk_exec_timeout_function EXEC_TIMEOUT_FUNC =
-  default_exec_timeout_func;
+static ducc_exec_timeout_function EXEC_TIMEOUT_FUNC = default_exec_timeout_func;
 
-void rust_duk_set_exec_timeout_function(rust_duk_exec_timeout_function func) {
+void ducc_set_exec_timeout_function(ducc_exec_timeout_function func) {
   EXEC_TIMEOUT_FUNC = func;
 }
 
-rust_duk_exec_timeout_function rust_duk_get_exec_timeout_function() {
+ducc_exec_timeout_function ducc_get_exec_timeout_function() {
   return EXEC_TIMEOUT_FUNC;
 }

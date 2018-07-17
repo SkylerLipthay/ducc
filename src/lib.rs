@@ -1,5 +1,5 @@
 extern crate cesu8;
-extern crate duktape_sys as ffi;
+extern crate ducc_sys as ffi;
 
 #[macro_use] mod util;
 mod array;

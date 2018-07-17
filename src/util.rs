@@ -289,7 +289,7 @@ impl Udata {
     }
 }
 
-// Unfortunately `rust_duk_set_exec_timeout_function` sets a global variable, so this applies to all
+// Unfortunately `ducc_set_exec_timeout_function` sets a global variable, so this applies to all
 // `duk_context`s whether or not they specify a `Udata` pointer as their heap `udata`. This means
 // that `timeout_func` will result in undefined behavior (likely a segmentation fault) if a
 // `duk_context` is created outside of `Ducc`. Long story short: use `Ducc` and don't use
@@ -297,7 +297,7 @@ impl Udata {
 fn ensure_exec_timeout_check_exists() {
     static INIT: Once = ONCE_INIT;
     INIT.call_once(|| {
-        unsafe { ffi::rust_duk_set_exec_timeout_function(Some(timeout_func)); }
+        unsafe { ffi::ducc_set_exec_timeout_function(Some(timeout_func)); }
     });
 }
 

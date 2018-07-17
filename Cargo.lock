@@ -13,13 +13,13 @@ name = "ducc"
 version = "0.0.1"
 dependencies = [
  "cesu8 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "duktape-sys 0.0.1",
+ "ducc-sys 0.0.1",
  "serde 1.0.69 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.69 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
-name = "duktape-sys"
+name = "ducc-sys"
 version = "0.0.1"
 dependencies = [
  "cc 1.0.15 (registry+https://github.com/rust-lang/crates.io-index)",

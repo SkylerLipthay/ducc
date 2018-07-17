@@ -9,12 +9,12 @@ license = "MIT"
 default = ["timeout"]
 
 # Enables the use of execution timeouts.
-timeout = ["duktape-sys/use-exec-timeout-check"]
+timeout = ["ducc-sys/use-exec-timeout-check"]
 
 [dependencies]
 cesu8 = "1.1"
 serde = "1.0"
 serde_derive = "1.0"
 
-[dependencies.duktape-sys]
-path = "duktape-sys"
+[dependencies.ducc-sys]
+path = "ducc-sys"
