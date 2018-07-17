@@ -74,11 +74,7 @@ impl<'ducc> FromValue<'ducc> for Function<'ducc> {
     fn from_value(value: Value<'ducc>, _ducc: &'ducc Ducc) -> Result<Function<'ducc>> {
         match value {
             Value::Function(f) => Ok(f),
-            value => Err(Error::FromDuktapeConversionError {
-                from: value.type_name(),
-                to: "function",
-                message: None,
-            }),
+            value => Err(Error::from_js_conversion(value.type_name(), "Function")),
         }
     }
 }
@@ -93,11 +89,7 @@ impl<'ducc> FromValue<'ducc> for Array<'ducc> {
     fn from_value(value: Value<'ducc>, _ducc: &'ducc Ducc) -> Result<Array<'ducc>> {
         match value {
             Value::Array(a) => Ok(a),
-            value => Err(Error::FromDuktapeConversionError {
-                from: value.type_name(),
-                to: "array",
-                message: None,
-            }),
+            value => Err(Error::from_js_conversion(value.type_name(), "Array")),
         }
     }
 }
@@ -112,11 +104,7 @@ impl<'ducc> FromValue<'ducc> for Object<'ducc> {
     fn from_value(value: Value<'ducc>, _ducc: &'ducc Ducc) -> Result<Object<'ducc>> {
         match value {
             Value::Object(o) => Ok(o),
-            value => Err(Error::FromDuktapeConversionError {
-                from: value.type_name(),
-                to: "object",
-                message: None,
-            }),
+            value => Err(Error::from_js_conversion(value.type_name(), "Object")),
         }
     }
 }
@@ -131,11 +119,7 @@ impl<'ducc> FromValue<'ducc> for Bytes<'ducc> {
     fn from_value(value: Value<'ducc>, _ducc: &'ducc Ducc) -> Result<Bytes<'ducc>> {
         match value {
             Value::Bytes(b) => Ok(b),
-            value => Err(Error::FromDuktapeConversionError {
-                from: value.type_name(),
-                to: "bytes",
-                message: None,
-            }),
+            value => Err(Error::from_js_conversion(value.type_name(), "Bytes")),
         }
     }
 }
@@ -164,11 +148,7 @@ where
     fn from_value(value: Value<'ducc>, _ducc: &'ducc Ducc) -> Result<Self> {
         match value {
             Value::Object(o) => o.properties().collect(),
-            value => Err(Error::FromDuktapeConversionError {
-                from: value.type_name(),
-                to: "HashMap",
-                message: None,
-            }),
+            value => Err(Error::from_js_conversion(value.type_name(), "HashMap")),
         }
     }
 }
@@ -195,11 +175,7 @@ where
     fn from_value(value: Value<'ducc>, _ducc: &'ducc Ducc) -> Result<Self> {
         match value {
             Value::Object(o) => o.properties().collect(),
-            value => Err(Error::FromDuktapeConversionError {
-                from: value.type_name(),
-                to: "BTreeMap",
-                message: None,
-            }),
+            value => Err(Error::from_js_conversion(value.type_name(), "BTreeMap")),
         }
     }
 }
@@ -218,11 +194,7 @@ impl<'ducc, V: FromValue<'ducc>> FromValue<'ducc> for Vec<V> {
     fn from_value(value: Value<'ducc>, _ducc: &'ducc Ducc) -> Result<Self> {
         match value {
             Value::Array(a) => a.elements().collect(),
-            value => Err(Error::FromDuktapeConversionError {
-                from: value.type_name(),
-                to: "Vec",
-                message: None,
-            }),
+            value => Err(Error::from_js_conversion(value.type_name(), "Vec")),
         }
     }
 }

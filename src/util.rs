@@ -1,5 +1,5 @@
 use cesu8::{from_cesu8, to_cesu8};
-use error::{Error, Result, RuntimeErrorCode};
+use error::{Error, ErrorKind, Result, RuntimeErrorCode};
 use ffi;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
@@ -120,42 +120,58 @@ unsafe extern "C" fn error_finalizer(ctx: *mut ffi::duk_context) -> ffi::duk_ret
 pub unsafe fn push_error(ctx: *mut ffi::duk_context, error: Error) {
     assert_stack!(ctx, 1, {
         let desc = error.into_runtime_error_desc();
-        let cstr_msg = desc.message.map(|ref msg| CString::new(to_cesu8(msg)).unwrap());
-        let cstr_name = CString::new(to_cesu8(&desc.name)).unwrap();
+        let cstr_msg = match desc.message {
+            Some(ref msg) => match CString::new(to_cesu8(msg)) {
+                Ok(msg) => Some(msg),
+                Err(_) => None,
+            },
+            None => None,
+        };
+        let cstr_name = match CString::new(to_cesu8(&desc.name)) {
+            Ok(name) => name,
+            Err(_) => CString::new("Error").unwrap(),
+        };
 
         ffi::duk_require_stack(ctx, 2);
-        // TODO: Line number and file name.
-        // TODO: This can error so it needs to be `protected`. I think the error can come from
-        // `Duktape.errCreate` and `Duktape.errThrow` I think we should delete `Duktape`.
         ffi::duk_push_error_object_raw(
             ctx,
             desc.code.to_duk_errcode(),
+            // TODO: Line number and file name:
             ptr::null_mut(),
             0,
-            match cstr_msg {
-                Some(cstr) => cstr.as_ptr(),
-                None => ptr::null_mut(),
-            }
+            ptr::null_mut(),
         );
 
         ffi::duk_push_lstring(ctx, cstr_name.as_ptr(), cstr_name.as_bytes().len());
         ffi::duk_put_prop_string(ctx, -2, cstr!("name"));
+        if let Some(cstr_msg) = cstr_msg {
+            ffi::duk_push_lstring(ctx, cstr_msg.as_ptr(), cstr_msg.as_bytes().len());
+            ffi::duk_put_prop_string(ctx, -2, cstr!("message"));
+        }
         ffi::duk_push_pointer(ctx, Box::into_raw(desc.cause) as *mut _);
         ffi::duk_put_prop_string(ctx, -2, ERROR_KEY.as_ptr());
         ffi::duk_push_c_function(ctx, Some(error_finalizer), 1);
         ffi::duk_set_finalizer(ctx, -2);
-
-        // let ducc = Ducc { ctx, is_top: false };
-        // let object = Object(ducc.pop_ref());
-        // // TODO: Populate object
-        // ducc.push_ref(&object.0);
     })
 }
 
 pub unsafe fn pop_error(ctx: *mut ffi::duk_context) -> Error {
     assert_stack!(ctx, -1, {
-        let code = RuntimeErrorCode::from_duk_errcode(ffi::duk_get_error_code(ctx, -1));
         ffi::duk_require_stack(ctx, 1);
+
+        ffi::duk_get_prop_string(ctx, -1, ERROR_KEY.as_ptr());
+        let error_ptr = ffi::duk_get_pointer(ctx, -1) as *mut Error;
+        ffi::duk_pop(ctx);
+        ffi::duk_push_undefined(ctx);
+        ffi::duk_put_prop_string(ctx, -2, ERROR_KEY.as_ptr());
+        ffi::duk_push_undefined(ctx);
+        ffi::duk_set_finalizer(ctx, -2);
+        if !error_ptr.is_null() {
+            ffi::duk_pop(ctx);
+            return *Box::from_raw(error_ptr);
+        }
+
+        let code = RuntimeErrorCode::from_duk_errcode(ffi::duk_get_error_code(ctx, -1));
         ffi::duk_get_prop_string(ctx, -1, cstr!("name"));
         let name = get_string(ctx, -1);
         ffi::duk_pop(ctx);
@@ -173,34 +189,20 @@ pub unsafe fn pop_error(ctx: *mut ffi::duk_context) -> Error {
             true => None,
         };
 
-        ffi::duk_get_prop_string(ctx, -1, ERROR_KEY.as_ptr());
-        let error_ptr = ffi::duk_get_pointer(ctx, -1) as *mut Error;
-        let cause = match error_ptr.is_null() {
-            false => Some(Box::from_raw(error_ptr)),
-            true => None,
-        };
         ffi::duk_pop(ctx);
 
-        ffi::duk_push_undefined(ctx);
-        ffi::duk_put_prop_string(ctx, -2, ERROR_KEY.as_ptr());
-
-        ffi::duk_push_undefined(ctx);
-        ffi::duk_set_finalizer(ctx, -2);
-
-        ffi::duk_pop(ctx);
-
-        Error::RuntimeError { code, name, message, cause }
+        Error {
+            kind: ErrorKind::RuntimeError { code, name },
+            context: message,
+        }
     })
 }
 
 // Converts a UTF-8 Rust string to a CESU-8 string and pushes it onto the Duktape stack. Returns an
 // error if the conversion failed.
 pub unsafe fn push_str(ctx: *mut ffi::duk_context, value: &str) -> Result<()> {
-    let string = CString::new(to_cesu8(value)).map_err(|_| Error::ToDuktapeConversionError {
-        from: "&str",
-        to: "string",
-        message: None,
-    })?;
+    let string = CString::new(to_cesu8(value))
+        .map_err(|_| Error::to_js_conversion("&str", "string"))?;
 
     assert_stack!(ctx, 1, {
         protect_duktape_closure(ctx, 0, 1, |ctx| {
@@ -240,6 +242,10 @@ pub unsafe fn create_heap() -> *mut ffi::duk_context {
     ffi::duk_require_stack(ctx, 1);
     ffi::duk_push_pointer(ctx, udata as *mut _);
     ffi::duk_put_global_string(ctx, UDATA.as_ptr());
+
+    ffi::duk_push_global_object(ctx);
+    ffi::duk_del_prop_string(ctx, -1, cstr!("Duktape"));
+    ffi::duk_pop(ctx);
 
     ctx
 }

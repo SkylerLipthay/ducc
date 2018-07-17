@@ -21,6 +21,9 @@ use util::{create_heap, get_udata, pop_error, protect_duktape_closure, push_str,
 use value::{FromValue, ToValue, Value};
 
 /// The entry point into the JavaScript execution environment.
+///
+/// The `Duktape` global variable is not available to scripts because it is possible to use its
+/// methods to violate security and safety guarantees made by this library.
 pub struct Ducc {
     pub(crate) ctx: *mut ffi::duk_context,
     // Internally, a `ctx` can live in multiple `Ducc` instances (see `function::create_callback`),
@@ -125,7 +128,7 @@ impl Ducc {
     {
         let func = RefCell::new(func);
         self.create_function(move |invocation| {
-            (&mut *func.try_borrow_mut().map_err(|_| Error::RecursiveMutCallback)?)(invocation)
+            (&mut *func.try_borrow_mut().map_err(|_| Error::recursive_mut_callback())?)(invocation)
         })
     }
 

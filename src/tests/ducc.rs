@@ -18,3 +18,10 @@ fn timeout() {
     let result: Result<(), _> = ducc.exec("for (;;) {}", None, Some(Duration::from_millis(500)));
     assert!(result.is_err());
 }
+
+#[test]
+fn no_duktape_global() {
+    let ducc = Ducc::new();
+    let globals = ducc.globals();
+    assert!(!globals.contains_key("Duktape").unwrap());
+}

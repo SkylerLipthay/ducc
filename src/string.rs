@@ -17,11 +17,7 @@ impl<'ducc> String<'ducc> {
     pub fn to_string(&self) -> Result<StdString> {
         match from_cesu8(self.as_bytes()) {
             Ok(string) => Ok(string.into_owned()),
-            Err(_) => Err(Error::FromDuktapeConversionError {
-                from: "string",
-                to: "String",
-                message: None,
-            })
+            Err(_) => Err(Error::from_js_conversion("string", "String"))
         }
     }
 

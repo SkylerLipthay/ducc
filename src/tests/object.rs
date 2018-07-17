@@ -8,7 +8,7 @@ use value::Value;
 fn contains_key() {
     let ducc = Ducc::new();
     let globals = ducc.globals();
-    assert!(globals.contains_key("Duktape").unwrap());
+    assert!(globals.contains_key("Array").unwrap());
     assert!(!globals.contains_key("~NOT-EXIST~").unwrap());
 }
 

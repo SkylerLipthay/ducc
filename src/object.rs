@@ -132,7 +132,7 @@ impl<'ducc> Object<'ducc> {
         if let Some(func) = value.as_function() {
             func.call_method(self.clone(), args)
         } else {
-            Err(Error::NotAFunction)
+            Err(Error::not_a_function())
         }
     }
 

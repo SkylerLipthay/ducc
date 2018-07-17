@@ -1,5 +1,5 @@
 use ducc::Ducc;
-use error::{Error, Result};
+use error::{Error, ErrorKind, Result, ResultExt};
 use function::{Function, Invocation};
 use value::Value;
 
@@ -35,13 +35,23 @@ fn rust_function() {
 
 #[test]
 fn rust_function_error() {
-    fn add(_inv: Invocation) -> Result<usize> {
-        Err(Error::RecursiveMutCallback) // TODO: Use ExternalError
+    fn err(inv: Invocation) -> Result<()> {
+        let _: (Function,) = inv.args.into(inv.ducc).js_err_context("function expected")?;
+        Ok(())
     }
 
     let ducc = Ducc::new();
-    let func = ducc.create_function(add);
-    assert!(func.call::<_, usize>((1, 2)).is_err());
+    let func = ducc.create_function(err);
+    ducc.globals().set("err", func).unwrap();
+    let _: () = ducc.exec(r#"
+        try {
+            err(123);
+        } catch (e) {
+            if (e.name !== 'TypeError' || e.message !== 'function expected') {
+                throw new Error('unexpected error: ' + e.name + ' -> "' + e.message + '"');
+            }
+        }
+    "#, None, None).unwrap();
 }
 
 #[test]
@@ -98,9 +108,7 @@ fn rust_closure_mut_callback_error() {
 
     ducc.globals().set("f", f).unwrap();
     match ducc.globals().get::<_, Function>("f").unwrap().call::<_, ()>((false,)) {
-        // TODO:
-        // Err(Error::RecursiveMutCallback) => { },
-        Err(Error::RuntimeError { .. }) => { },
+        Err(Error { kind: ErrorKind::RecursiveMutCallback, .. }) => { },
         other => panic!("incorrect result: {:?}", other),
     };
 }
