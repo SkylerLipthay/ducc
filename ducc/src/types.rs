@@ -1,6 +1,8 @@
 use ducc::Ducc;
 use error::Result;
 use ffi;
+use std::any::Any;
+use std::collections::BTreeMap;
 use std::fmt;
 use value::{Value, Values};
 
@@ -29,3 +31,5 @@ impl<'ducc> Drop for Ref<'ducc> {
 
 pub(crate) type Callback<'ducc, 'a> =
     Box<Fn(&'ducc Ducc, Value<'ducc>, Values<'ducc>) -> Result<Value<'ducc>> + 'a>;
+
+pub(crate) type AnyMap = BTreeMap<String, Box<Any + 'static>>;

@@ -10,7 +10,3 @@ Deep gratitude to [kyren/rlua](https://github.com/kyren/rlua), which provided
 inspiration and some directly copied code snippets. Lua and Duktape share a
 very similar API, and so do `rlua` and `ducc`. Also incredibly inspirational was
 [zrkn/rlua_serde](https://github.com/zrkn/rlua_serde).
-
-## To-do
-
-* Storing user data (in `Ducc`) to be retrieved in Rust functions.

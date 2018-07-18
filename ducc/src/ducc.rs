@@ -13,12 +13,14 @@ use error::{Error, Result};
 use ffi;
 use function::{create_callback, Function, Invocation};
 use object::Object;
+use std::any::Any;
 use std::cell::RefCell;
 use std::time::Duration;
 use string::String;
 use types::Ref;
 use util::{
     create_heap,
+    get_any_map,
     get_udata,
     pop_error,
     protect_duktape_closure,
@@ -103,6 +105,42 @@ impl Ducc {
         }
 
         result.into()
+    }
+
+    /// Inserts any sort of keyed value of type `T` into the `Ducc`, typically for later retrieval
+    /// from within Rust functions called from within JavaScript. If a value already exists with the
+    /// key, it is returned.
+    pub fn set_user_data<K, T>(&mut self, key: K, data: T) -> Option<Box<Any + 'static>>
+    where
+        K: ToString,
+        T: Any + 'static,
+    {
+        unsafe {
+            let any_map = get_any_map(self.ctx);
+            (*any_map).insert(key.to_string(), Box::new(data))
+        }
+    }
+
+    /// Returns a user data value by its key, or `None` if no value exists with the key. If a value
+    /// exists but it is not of the type `T`, `None` is returned. This is typically used by a Rust
+    /// function called from within JavaScript.
+    pub fn get_user_data<'ducc, T: Any + 'static>(&'ducc mut self, key: &str) -> Option<&'ducc T> {
+        unsafe {
+            let any_map = get_any_map(self.ctx);
+            match (*any_map).get(key) {
+                Some(data) => data.downcast_ref::<T>(),
+                None => None,
+            }
+        }
+    }
+
+    /// Removes and returns a user data value by its key. Returns `None` if no value exists with the
+    /// key.
+    pub fn remove_user_data(&mut self, key: &str) -> Option<Box<Any + 'static>> {
+        unsafe {
+            let any_map = get_any_map(self.ctx);
+            (*any_map).remove(key)
+        }
     }
 
     /// Wraps a Rust function or closure, creating a callable JavaScript function handle to it.
@@ -390,8 +428,10 @@ impl Drop for Ducc {
 
         unsafe {
             let udata = get_udata(self.ctx);
+            let any_map = get_any_map(self.ctx);
             ffi::duk_destroy_heap(self.ctx);
             Box::from_raw(udata);
+            Box::from_raw(any_map);
         }
     }
 }

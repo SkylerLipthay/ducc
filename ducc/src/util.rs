@@ -6,6 +6,7 @@ use std::os::raw::{c_char, c_void};
 use std::{process, ptr, slice};
 use std::sync::{Once, ONCE_INIT};
 use std::time::{Duration, Instant};
+use types::AnyMap;
 
 // Throws an error if `$body` results in a change of `$ctx`'s stack size that isn't exactly equal to
 // `$diff`. Must be used in an `unsafe` block.
@@ -244,6 +245,7 @@ unsafe fn get_string(ctx: *mut ffi::duk_context, idx: ffi::duk_idx_t) -> String 
 }
 
 const UDATA: [i8; 7] = hidden_i8str!('u', 'd', 'a', 't', 'a');
+const ANYMAP: [i8; 8] = hidden_i8str!('a', 'n', 'y', 'm', 'a', 'p');
 
 pub(crate) unsafe fn create_heap() -> *mut ffi::duk_context {
     if cfg!(feature = "timeout") {
@@ -255,8 +257,13 @@ pub(crate) unsafe fn create_heap() -> *mut ffi::duk_context {
     assert!(!ctx.is_null());
 
     ffi::duk_require_stack(ctx, 1);
+
     ffi::duk_push_pointer(ctx, udata as *mut _);
     ffi::duk_put_global_string(ctx, UDATA.as_ptr());
+
+    let any_map = Box::into_raw(Box::new(AnyMap::new()));
+    ffi::duk_push_pointer(ctx, any_map as *mut _);
+    ffi::duk_put_global_string(ctx, ANYMAP.as_ptr());
 
     ffi::duk_push_global_object(ctx);
     ffi::duk_del_prop_string(ctx, -1, cstr!("Duktape"));
@@ -270,6 +277,13 @@ pub(crate) unsafe fn get_udata(ctx: *mut ffi::duk_context) -> *mut Udata {
     ffi::duk_require_stack(ctx, 1);
     ffi::duk_get_global_string(ctx, UDATA.as_ptr());
     ffi::duk_get_pointer(ctx, -1) as *mut Udata
+}
+
+pub(crate) unsafe fn get_any_map(ctx: *mut ffi::duk_context) -> *mut AnyMap {
+    let _sg = StackGuard::new(ctx);
+    ffi::duk_require_stack(ctx, 1);
+    ffi::duk_get_global_string(ctx, ANYMAP.as_ptr());
+    ffi::duk_get_pointer(ctx, -1) as *mut AnyMap
 }
 
 unsafe extern "C" fn fatal_handler(_udata: *mut c_void, msg: *const c_char) {
