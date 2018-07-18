@@ -53,7 +53,11 @@ macro_rules! hidden_i8str {
 //
 // If an `Err` is returned, the stack size remains unchanged. If `Ok` is returned, the stack size
 // increases by `num_returns`.
-pub unsafe fn protect_duktape_closure<F, R>(
+//
+// TODO: Should all FFI code be wrapped in `protect`? I've wrapped all FFI calls that seemed like
+// they could `longjmp`, but the Duktape documentation isn't entirely clear. Perhaps it should be
+// assumed that *any* FFI code will error.
+pub(crate) unsafe fn protect_duktape_closure<F, R>(
     ctx: *mut ffi::duk_context,
     num_args: ffi::duk_idx_t,
     num_returns: ffi::duk_idx_t,
@@ -117,7 +121,7 @@ unsafe extern "C" fn error_finalizer(ctx: *mut ffi::duk_context) -> ffi::duk_ret
     0
 }
 
-pub unsafe fn push_error(ctx: *mut ffi::duk_context, error: Error) {
+pub(crate) unsafe fn push_error(ctx: *mut ffi::duk_context, error: Error) {
     assert_stack!(ctx, 1, {
         let desc = error.into_runtime_error_desc();
         let cstr_msg = match desc.message {
@@ -155,7 +159,7 @@ pub unsafe fn push_error(ctx: *mut ffi::duk_context, error: Error) {
     })
 }
 
-pub unsafe fn pop_error(ctx: *mut ffi::duk_context) -> Error {
+pub(crate) unsafe fn pop_error(ctx: *mut ffi::duk_context) -> Error {
     assert_stack!(ctx, -1, {
         ffi::duk_require_stack(ctx, 1);
 
@@ -198,9 +202,20 @@ pub unsafe fn pop_error(ctx: *mut ffi::duk_context) -> Error {
     })
 }
 
+pub(crate) unsafe fn push_bytes(ctx: *mut ffi::duk_context, value: &[u8]) -> Result<()> {
+    assert_stack!(ctx, 1, {
+        protect_duktape_closure(ctx, 0, 1, |ctx| {
+            ffi::duk_require_stack(ctx, 1);
+            let len = value.len();
+            let data = ffi::duk_push_fixed_buffer(ctx, len);
+            ptr::copy(value.as_ptr(), data as *mut u8, len);
+        })
+    })
+}
+
 // Converts a UTF-8 Rust string to a CESU-8 string and pushes it onto the Duktape stack. Returns an
 // error if the conversion failed.
-pub unsafe fn push_str(ctx: *mut ffi::duk_context, value: &str) -> Result<()> {
+pub(crate) unsafe fn push_str(ctx: *mut ffi::duk_context, value: &str) -> Result<()> {
     let string = CString::new(to_cesu8(value))
         .map_err(|_| Error::to_js_conversion("&str", "string"))?;
 
@@ -230,7 +245,7 @@ unsafe fn get_string(ctx: *mut ffi::duk_context, idx: ffi::duk_idx_t) -> String 
 
 const UDATA: [i8; 7] = hidden_i8str!('u', 'd', 'a', 't', 'a');
 
-pub unsafe fn create_heap() -> *mut ffi::duk_context {
+pub(crate) unsafe fn create_heap() -> *mut ffi::duk_context {
     if cfg!(feature = "timeout") {
         ensure_exec_timeout_check_exists();
     }
@@ -250,7 +265,7 @@ pub unsafe fn create_heap() -> *mut ffi::duk_context {
     ctx
 }
 
-pub unsafe fn get_udata(ctx: *mut ffi::duk_context) -> *mut Udata {
+pub(crate) unsafe fn get_udata(ctx: *mut ffi::duk_context) -> *mut Udata {
     let _sg = StackGuard::new(ctx);
     ffi::duk_require_stack(ctx, 1);
     ffi::duk_get_global_string(ctx, UDATA.as_ptr());
@@ -272,7 +287,7 @@ struct Timeout {
     duration: Duration,
 }
 
-pub struct Udata {
+pub(crate) struct Udata {
     timeout: Option<Timeout>,
 }
 
@@ -317,7 +332,7 @@ unsafe extern "C" fn timeout_func(udata: *mut c_void) -> ffi::duk_bool_t {
 // Creates a `StackGuard` instance with a record of the stack size, and on drop will check the stack
 // size and drop any extra elements. If the stack size at the end is *smaller* than at the
 // beginning, this is considered a fatal logic error and will result in an abort.
-pub struct StackGuard {
+pub(crate) struct StackGuard {
     ctx: *mut ffi::duk_context,
     top: ffi::duk_idx_t,
 }

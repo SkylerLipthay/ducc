@@ -17,7 +17,15 @@ use std::cell::RefCell;
 use std::time::Duration;
 use string::String;
 use types::Ref;
-use util::{create_heap, get_udata, pop_error, protect_duktape_closure, push_str, StackGuard};
+use util::{
+    create_heap,
+    get_udata,
+    pop_error,
+    protect_duktape_closure,
+    push_bytes,
+    push_str,
+    StackGuard,
+};
 use value::{FromValue, ToValue, Value};
 
 /// The entry point into the JavaScript execution environment.
@@ -132,12 +140,22 @@ impl Ducc {
         })
     }
 
-    /// Pass a `&str` to Duktape, creating and returning an interned Duktape string.
+    /// Pass a `&str` to Duktape, creating and returning an interned string.
     pub fn create_string(&self, value: &str) -> Result<String> {
         unsafe {
             assert_stack!(self.ctx, 0, {
                 push_str(self.ctx, value)?;
                 Ok(String(self.pop_ref()))
+            })
+        }
+    }
+
+    /// Pass a `&[u8]` to Duktape, creating and returning an interned `Bytes`.
+    pub fn create_bytes(&self, value: &[u8]) -> Result<Bytes> {
+        unsafe {
+            assert_stack!(self.ctx, 0, {
+                push_bytes(self.ctx, value)?;
+                Ok(Bytes(self.pop_ref()))
             })
         }
     }

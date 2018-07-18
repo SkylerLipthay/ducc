@@ -8,10 +8,9 @@ lessons I learned from using directly the unsafe FFI in a production setting.
 
 Deep gratitude to [kyren/rlua](https://github.com/kyren/rlua), which provided
 inspiration and some directly copied code snippets. Lua and Duktape share a
-very similar API, and so do `rlua` and `ducc`.
+very similar API, and so do `rlua` and `ducc`. Also incredibly inspirational was
+[zrkn/rlua_serde](https://github.com/zrkn/rlua_serde).
 
 ## To-do
 
-* Serde integration (see `rlua_serde`).
 * Storing user data (in `Ducc`) to be retrieved in Rust functions.
-* Should all FFI code be wrapped in `protect`?

@@ -66,7 +66,7 @@ pub struct Invocation<'ducc> {
 
 const FUNC: [i8; 6] = hidden_i8str!('f', 'u', 'n', 'c');
 
-pub fn create_callback<'ducc, 'callback>(
+pub(crate) fn create_callback<'ducc, 'callback>(
     ducc: &'ducc Ducc,
     func: Callback<'callback, 'static>,
 ) -> Function<'ducc> {

@@ -15,11 +15,11 @@ mod value;
 
 #[cfg(test)] mod tests;
 
-pub use array::Array;
+pub use array::{Array, Elements};
 pub use bytes::Bytes;
 pub use ducc::Ducc;
 pub use error::{Error, ErrorKind, Result, ResultExt, RuntimeError, RuntimeErrorCode};
 pub use function::{Function, Invocation};
-pub use object::Object;
+pub use object::{Object, Properties};
 pub use string::String;
 pub use value::{FromValue, FromValues, ToValue, ToValues, Value, Values, Variadic};

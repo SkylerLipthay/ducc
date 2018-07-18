@@ -1,5 +1,6 @@
 use ffi;
 use std::any::TypeId;
+use std::error::Error as StdError;
 use std::{fmt, result};
 
 pub type Result<T> = result::Result<T, Error>;
@@ -131,6 +132,35 @@ impl Error {
     }
 }
 
+impl StdError for Error {
+    fn description(&self) -> &'static str {
+        "JavaScript execution error"
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        if let Some(ref context) = self.context {
+            write!(fmt, "{}: ", context)?;
+        }
+
+        match self.kind {
+            ErrorKind::ToJsConversionError { from, to, } => {
+                write!(fmt, "error converting {} to JavaScript {}", from, to)
+            },
+            ErrorKind::FromJsConversionError { from, to, } => {
+                write!(fmt, "error converting JavaScript {} to {}", from, to)
+            },
+            ErrorKind::RuntimeError { ref name, .. } => {
+                write!(fmt, "JavaScript runtime error ({})", name)
+            },
+            ErrorKind::RecursiveMutCallback => write!(fmt, "mutable callback called recursively"),
+            ErrorKind::NotAFunction => write!(fmt, "tried to a call a non-function"),
+            ErrorKind::ExternalError(ref err) => err.fmt(fmt),
+        }
+    }
+}
+
 pub trait ResultExt {
     fn js_err_context<D: fmt::Display>(self, context: D) -> Self;
     fn js_err_context_with<D: fmt::Display, F: FnOnce(&Error) -> D>(self, op: F) -> Self;
@@ -158,7 +188,7 @@ impl<T> ResultExt for result::Result<T, Error> {
     }
 }
 
-pub struct RuntimeErrorDesc {
+pub(crate) struct RuntimeErrorDesc {
     pub code: RuntimeErrorCode,
     pub name: String,
     pub message: Option<String>,

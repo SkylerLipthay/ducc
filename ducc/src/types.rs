@@ -4,7 +4,7 @@ use ffi;
 use std::fmt;
 use value::{Value, Values};
 
-pub struct Ref<'ducc> {
+pub(crate) struct Ref<'ducc> {
     pub ducc: &'ducc Ducc,
     pub stash_key: ffi::duk_uarridx_t,
 }
@@ -27,5 +27,5 @@ impl<'ducc> Drop for Ref<'ducc> {
     }
 }
 
-pub type Callback<'ducc, 'a> =
+pub(crate) type Callback<'ducc, 'a> =
     Box<Fn(&'ducc Ducc, Value<'ducc>, Values<'ducc>) -> Result<Value<'ducc>> + 'a>;

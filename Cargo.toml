@@ -1,20 +1,7 @@
-[package]
-name = "ducc"
-version = "0.0.1"
-authors = ["Skyler Lipthay <sl@skylerlipthay.com>"]
-repository = "https://github.com/SkylerLipthay/ducc"
-license = "MIT"
+[workspace]
 
-[features]
-default = ["timeout"]
-
-# Enables the use of execution timeouts.
-timeout = ["ducc-sys/use-exec-timeout-check"]
-
-[dependencies]
-cesu8 = "1.1"
-serde = "1.0"
-serde_derive = "1.0"
-
-[dependencies.ducc-sys]
-path = "ducc-sys"
+members = [
+    "ducc",
+    "ducc-sys",
+    "ducc-serde",
+]
