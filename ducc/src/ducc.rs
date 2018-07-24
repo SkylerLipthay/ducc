@@ -124,7 +124,7 @@ impl Ducc {
     /// Returns a user data value by its key, or `None` if no value exists with the key. If a value
     /// exists but it is not of the type `T`, `None` is returned. This is typically used by a Rust
     /// function called from within JavaScript.
-    pub fn get_user_data<'ducc, T: Any + 'static>(&'ducc mut self, key: &str) -> Option<&'ducc T> {
+    pub fn get_user_data<'ducc, T: Any + 'static>(&'ducc self, key: &str) -> Option<&'ducc T> {
         unsafe {
             let any_map = get_any_map(self.ctx);
             match (*any_map).get(key) {
