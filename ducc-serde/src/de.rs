@@ -44,7 +44,9 @@ impl<'ducc, 'de> serde::Deserializer<'de> for Deserializer<'ducc> {
                 }
             },
             Value::Bytes(v) => visitor.visit_bytes(&v.to_vec()),
-            _ => Err(serde::de::Error::custom("invalid value type")),
+            // TODO: Should values that cannot be deserialized be treated as errors? Perhaps this
+            // should be a configurable behavior.
+            _ => visitor.visit_unit(),
         }
     }
 
