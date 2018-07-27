@@ -1,4 +1,4 @@
-use ducc::Error as DuccError;
+use ducc::{Error as DuccError, ResultExt};
 use serde;
 use std::fmt;
 use std::error::Error as StdError;
@@ -34,13 +34,13 @@ impl StdError for Error {
 }
 
 impl serde::ser::Error for Error {
-    fn custom<T: fmt::Display>(_msg: T) -> Self {
-        Error(DuccError::to_js_conversion("serde", "value"))
+    fn custom<T: fmt::Display>(msg: T) -> Self {
+        Error(DuccError::to_js_conversion("serde", "value").js_err_context(msg))
     }
 }
 
 impl serde::de::Error for Error {
-    fn custom<T: fmt::Display>(_msg: T) -> Self {
-        Error(DuccError::to_js_conversion("value", "serde"))
+    fn custom<T: fmt::Display>(msg: T) -> Self {
+        Error(DuccError::from_js_conversion("value", "serde").js_err_context(msg))
     }
 }

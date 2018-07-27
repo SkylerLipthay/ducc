@@ -190,8 +190,8 @@ pub(crate) unsafe fn pop_error(ctx: *mut ffi::duk_context) -> Error {
         };
 
         let message = match message.is_empty() {
-            false => Some(message),
-            true => None,
+            false => vec![message],
+            true => vec![],
         };
 
         ffi::duk_pop(ctx);

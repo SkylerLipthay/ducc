@@ -9,9 +9,9 @@ pub type Result<T> = result::Result<T, Error>;
 pub struct Error {
     /// The underlying type of error.
     pub kind: ErrorKind,
-    /// An optional context message describing the error. This corresponds to the JavaScript
-    /// `Error`'s `message` property.
-    pub context: Option<String>,
+    /// An optional list of context messages describing the error. This corresponds to the
+    /// JavaScript `Error`'s `message` property.
+    pub context: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -55,30 +55,30 @@ impl Error {
     pub fn external<T: RuntimeError + 'static>(error: T) -> Error {
         Error {
             kind: ErrorKind::ExternalError(Box::new(error)),
-            context: None,
+            context: vec![],
         }
     }
 
     pub fn from_js_conversion(from: &'static str, to: &'static str) -> Error {
         Error {
             kind: ErrorKind::FromJsConversionError { from, to },
-            context: None,
+            context: vec![],
         }
     }
 
     pub fn to_js_conversion(from: &'static str, to: &'static str) -> Error {
         Error {
             kind: ErrorKind::ToJsConversionError { from, to },
-            context: None,
+            context: vec![],
         }
     }
 
     pub fn recursive_mut_callback() -> Error {
-        Error { kind: ErrorKind::RecursiveMutCallback, context: None }
+        Error { kind: ErrorKind::RecursiveMutCallback, context: vec![] }
     }
 
     pub fn not_a_function() -> Error {
-        Error { kind: ErrorKind::NotAFunction, context: None }
+        Error { kind: ErrorKind::NotAFunction, context: vec![] }
     }
 
     pub(crate) fn into_runtime_error_desc(self) -> RuntimeErrorDesc {
@@ -110,7 +110,11 @@ impl Error {
     fn runtime_message(&self) -> Option<String> {
         let mut message = String::new();
 
-        if let Some(ref context) = self.context {
+        for context in self.context.iter().rev() {
+            if !message.is_empty() {
+                message.push_str(": ");
+            }
+
             message.push_str(context);
         }
 
@@ -140,15 +144,15 @@ impl StdError for Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(ref context) = self.context {
+        for context in self.context.iter().rev() {
             write!(fmt, "{}: ", context)?;
         }
 
         match self.kind {
-            ErrorKind::ToJsConversionError { from, to, } => {
+            ErrorKind::ToJsConversionError { from, to } => {
                 write!(fmt, "error converting {} to JavaScript {}", from, to)
             },
-            ErrorKind::FromJsConversionError { from, to, } => {
+            ErrorKind::FromJsConversionError { from, to } => {
                 write!(fmt, "error converting JavaScript {} to {}", from, to)
             },
             ErrorKind::RuntimeError { ref name, .. } => {
@@ -170,7 +174,7 @@ impl<T> ResultExt for result::Result<T, Error> {
     fn js_err_context<D: fmt::Display>(self, context: D) -> Self {
         match self {
             Err(mut err) => {
-                err.context = Some(context.to_string());
+                err.context.push(context.to_string());
                 Err(err)
             },
             result => result,
@@ -180,11 +184,25 @@ impl<T> ResultExt for result::Result<T, Error> {
     fn js_err_context_with<D: fmt::Display, F: FnOnce(&Error) -> D>(self, op: F) -> Self {
         match self {
             Err(mut err) => {
-                err.context = Some(op(&err).to_string());
+                let context = op(&err).to_string();
+                err.context.push(context);
                 Err(err)
             },
             result => result,
         }
+    }
+}
+
+impl ResultExt for Error {
+    fn js_err_context<D: fmt::Display>(mut self, context: D) -> Self {
+        self.context.push(context.to_string());
+        self
+    }
+
+    fn js_err_context_with<D: fmt::Display, F: FnOnce(&Error) -> D>(mut self, op: F) -> Self {
+        let context = op(&self).to_string();
+        self.context.push(context);
+        self
     }
 }
 
@@ -324,7 +342,7 @@ impl From<ErrorKind> for Error {
     fn from(error: ErrorKind) -> Error {
         Error {
             kind: error,
-            context: None,
+            context: vec![],
         }
     }
 }
