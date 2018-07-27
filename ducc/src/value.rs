@@ -178,6 +178,14 @@ impl<'ducc> Values<'ducc> {
         self.0
     }
 
+    pub fn get(&self, index: usize) -> Value<'ducc> {
+        self.0.get(index).map(Clone::clone).unwrap_or(Value::Undefined)
+    }
+
+    pub fn from<T: FromValue<'ducc>>(&self, ducc: &'ducc Ducc, index: usize) -> Result<T> {
+        T::from_value(self.0.get(index).map(Clone::clone).unwrap_or(Value::Undefined), ducc)
+    }
+
     pub fn into<T: FromValues<'ducc>>(self, ducc: &'ducc Ducc) -> Result<T> {
         T::from_values(self, ducc)
     }
