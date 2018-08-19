@@ -1,7 +1,7 @@
-use ducc::Ducc;
+use ducc::{Ducc, ExecSettings};
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use value::Value;
 
 #[test]
@@ -17,7 +17,10 @@ fn value_cross_contamination() {
 #[test]
 fn timeout() {
     let ducc = Ducc::new();
-    let result: Result<(), _> = ducc.exec("for (;;) {}", None, Some(Duration::from_millis(500)));
+    let start = Instant::now();
+    let cancel_fn = move || Instant::now().duration_since(start) > Duration::from_millis(500);
+    let settings = ExecSettings { cancel_fn: Some(Box::new(cancel_fn)) };
+    let result: Result<(), _> = ducc.exec("for (;;) {}", None, settings);
     assert!(result.is_err());
 }
 

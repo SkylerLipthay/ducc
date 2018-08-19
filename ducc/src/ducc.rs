@@ -15,7 +15,6 @@ use function::{create_callback, Function, Invocation};
 use object::Object;
 use std::any::Any;
 use std::cell::RefCell;
-use std::time::Duration;
 use string::String;
 use types::Ref;
 use util::{
@@ -81,28 +80,22 @@ impl Ducc {
     /// Executes a chunk of JavaScript code and returns its result.
     ///
     /// This is equivalent to calling `Ducc::compile` and `Function::call` immediately after. The
-    /// only difference is that this function supports a `timeout` parameter, which causes an error
-    /// to be raised after a specified amount of JavaScript execution time. Due to limitations of
-    /// Duktape, timeout checking is not performed during native (Rust) code execution, only from
-    /// time-to-time during JavaScript execution.
+    /// only difference is that this function supports a `settings` parameter, can be used to
+    /// specify one-time execution settings.
     pub fn exec<'ducc, R: FromValue<'ducc>>(
         &'ducc self,
         source: &str,
         name: Option<&str>,
-        timeout: Option<Duration>,
+        settings: ExecSettings,
     ) -> Result<R> {
         let func = self.compile(source, name)?;
 
         let udata = unsafe { get_udata(self.ctx) };
-        if let Some(duration) = timeout {
-            unsafe { (*udata).set_timeout(duration); }
-        }
+        unsafe { (*udata).set_exec_settings(settings); }
 
         let result = func.call(());
 
-        if timeout.is_some() {
-            unsafe { (*udata).clear_timeout(); }
-        }
+        unsafe { (*udata).clear_exec_settings(); }
 
         result.into()
     }
@@ -434,4 +427,14 @@ impl Drop for Ducc {
             Box::from_raw(any_map);
         }
     }
+}
+
+/// A list of one-time settings for JavaScript execution.
+#[derive(Default)]
+pub struct ExecSettings {
+    /// An optional closure that returns `true` if the execution should be cancelled as soon as
+    /// possible, or `false` if the execution should continue. This is useful for implementing an
+    /// execution timeout. This function is only called during JavaScript execution, and will not be
+    /// called while execution is within native Rust code.
+    pub cancel_fn: Option<Box<Fn() -> bool>>,
 }

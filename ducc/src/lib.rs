@@ -17,7 +17,7 @@ mod value;
 
 pub use array::{Array, Elements};
 pub use bytes::Bytes;
-pub use ducc::Ducc;
+pub use ducc::{Ducc, ExecSettings};
 pub use error::{Error, ErrorKind, Result, ResultExt, RuntimeError, RuntimeErrorCode};
 pub use function::{Function, Invocation};
 pub use object::{Object, Properties};

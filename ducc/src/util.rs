@@ -1,11 +1,11 @@
 use cesu8::{from_cesu8, to_cesu8};
+use ducc::ExecSettings;
 use error::{Error, ErrorKind, Result, RuntimeErrorCode};
 use ffi;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 use std::{process, ptr, slice};
 use std::sync::{Once, ONCE_INIT};
-use std::time::{Duration, Instant};
 use types::AnyMap;
 
 // Throws an error if `$body` results in a change of `$ctx`'s stack size that isn't exactly equal to
@@ -248,11 +248,9 @@ const UDATA: [i8; 7] = hidden_i8str!('u', 'd', 'a', 't', 'a');
 const ANYMAP: [i8; 8] = hidden_i8str!('a', 'n', 'y', 'm', 'a', 'p');
 
 pub(crate) unsafe fn create_heap() -> *mut ffi::duk_context {
-    if cfg!(feature = "timeout") {
-        ensure_exec_timeout_check_exists();
-    }
+    ensure_exec_timeout_check_exists();
 
-    let udata = Box::into_raw(Box::new(Udata { timeout: None }));
+    let udata = Box::into_raw(Box::new(Udata { exec_settings: None }));
     let ctx = ffi::duk_create_heap(None, None, None, udata as *mut _, Some(fatal_handler));
     assert!(!ctx.is_null());
 
@@ -296,25 +294,17 @@ unsafe extern "C" fn fatal_handler(_udata: *mut c_void, msg: *const c_char) {
     process::abort();
 }
 
-struct Timeout {
-    start: Instant,
-    duration: Duration,
-}
-
 pub(crate) struct Udata {
-    timeout: Option<Timeout>,
+    exec_settings: Option<ExecSettings>,
 }
 
 impl Udata {
-    pub fn set_timeout(&mut self, duration: Duration) {
-        self.timeout = Some(Timeout {
-            start: Instant::now(),
-            duration,
-        });
+    pub fn set_exec_settings(&mut self, exec_settings: ExecSettings) {
+        self.exec_settings = Some(exec_settings);
     }
 
-    pub fn clear_timeout(&mut self) {
-        self.timeout = None;
+    pub fn clear_exec_settings(&mut self) {
+        self.exec_settings = None;
     }
 }
 
@@ -334,9 +324,9 @@ unsafe extern "C" fn timeout_func(udata: *mut c_void) -> ffi::duk_bool_t {
     let udata = udata as *mut Udata;
     assert!(!udata.is_null());
 
-    if let Some(ref timeout) = (*udata).timeout {
-        if timeout.start.elapsed() >= timeout.duration {
-            return 1;
+    if let Some(ref settings) = (*udata).exec_settings {
+        if let Some(ref cancel_fn) = settings.cancel_fn {
+            return if cancel_fn() { 1 } else { 0 };
         }
     }
 

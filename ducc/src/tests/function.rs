@@ -1,4 +1,4 @@
-use ducc::Ducc;
+use ducc::{Ducc, ExecSettings};
 use error::{Error, ErrorKind, Result, ResultExt};
 use function::{Function, Invocation};
 use value::Value;
@@ -29,7 +29,7 @@ fn rust_function() {
     assert_eq!(3.0f64, value);
 
     ducc.globals().set("add", func).unwrap();
-    let value: f64 = ducc.exec("add(4, 5)", None, None).unwrap();
+    let value: f64 = ducc.exec("add(4, 5)", None, ExecSettings::default()).unwrap();
     assert_eq!(9.0f64, value);
 }
 
@@ -51,7 +51,7 @@ fn rust_function_error() {
                 throw new Error('unexpected error: ' + e.name + ' -> "' + e.message + '"');
             }
         }
-    "#, None, None).unwrap();
+    "#, None, ExecSettings::default()).unwrap();
 }
 
 #[test]
@@ -130,8 +130,8 @@ fn number_this() {
     assert_eq!(1.0f64, value);
 
     ducc.globals().set("add", func).unwrap();
-    let value: f64 = ducc.exec("add.call(12, 13)", None, None).unwrap();
+    let value: f64 = ducc.exec("add.call(12, 13)", None, ExecSettings::default()).unwrap();
     assert_eq!(25.0f64, value);
-    let value: f64 = ducc.exec("add(5)", None, None).unwrap();
+    let value: f64 = ducc.exec("add(5)", None, ExecSettings::default()).unwrap();
     assert_eq!(5.0f64, value);
 }
