@@ -8,6 +8,7 @@ fn main() {
         .rust_target(bindgen::RustTarget::Stable_1_25)
         .whitelist_type("^(?:rust_)?duk_.*")
         .whitelist_function("^(?:rust_)?duk_.*")
+        .whitelist_function("^(?:rust_)?ducc_.*")
         .whitelist_var("^DUK_.*")
         .generate()
         .expect("failed to generate bindings")
