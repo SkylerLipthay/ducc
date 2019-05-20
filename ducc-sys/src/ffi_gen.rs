@@ -5,6 +5,7 @@ fn main() {
         .header("duktape/wrapper.h")
         .clang_arg("-Iduktape")
         .clang_arg("-std=c99")
+        .trust_clang_mangling(false)
         .rust_target(bindgen::RustTarget::Stable_1_25)
         .whitelist_type("^(?:rust_)?duk_.*")
         .whitelist_function("^(?:rust_)?duk_.*")
