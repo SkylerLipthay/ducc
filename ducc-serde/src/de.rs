@@ -141,14 +141,28 @@ impl<'ducc, 'de> serde::de::MapAccess<'de> for MapDeserializer<'ducc> {
     where
         T: serde::de::DeserializeSeed<'de>
     {
-        match self.0.next() {
-            Some(item) => {
-                let (key, value) = item?;
-                self.1 = Some(value);
-                let key_de = Deserializer { value: key };
-                seed.deserialize(key_de).map(Some)
-            },
-            None => Ok(None),
+        loop {
+            match self.0.next() {
+                Some(item) => {
+                    let (key, value) = item?;
+                    match value {
+                        Value::Null => { },
+                        Value::Boolean(ref _v) => { },
+                        Value::Number(ref _v) => { },
+                        Value::String(ref _v) => { },
+                        Value::Array(ref _v) => { },
+                        Value::Object(ref _v) => { },
+                        Value::Bytes(ref _v) => { },
+                        // Skip any properties with `undefined` serializations. This is akin to how
+                        // `JSON.stringify` operates.
+                        _ => continue,
+                    }
+                    self.1 = Some(value);
+                    let key_de = Deserializer { value: key };
+                    return seed.deserialize(key_de).map(Some);
+                },
+                None => return Ok(None),
+            }
         }
     }
 
