@@ -1,7 +1,7 @@
 use array::Array;
 use ducc::Ducc;
 use object::Object;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, BTreeSet, HashSet};
 use value::{FromValue, FromValues, ToValue, ToValues, Value, Variadic};
 
 #[test]
@@ -101,4 +101,22 @@ fn vec() {
     let list: Result<Vec<usize>, _> = vec.to_value(&ducc).unwrap().into::<Array>(&ducc)
         .unwrap().elements().collect();
     assert_eq!(list.unwrap(), vec![1, 2, 3]);
+}
+
+#[test]
+fn btree_set() {
+    let btree_set: BTreeSet<_> = vec![1, 2, 3].into_iter().collect();
+    let ducc = Ducc::new();
+    let list: Result<BTreeSet<usize>, _> = btree_set.to_value(&ducc).unwrap().into::<Array>(&ducc)
+        .unwrap().elements().collect();
+    assert_eq!(list.unwrap(), vec![1, 2, 3].into_iter().collect());
+}
+
+#[test]
+fn hash_set() {
+    let hash_set: HashSet<_> = vec![1, 2, 3].into_iter().collect();
+    let ducc = Ducc::new();
+    let list: Result<HashSet<usize>, _> = hash_set.to_value(&ducc).unwrap().into::<Array>(&ducc)
+        .unwrap().elements().collect();
+    assert_eq!(list.unwrap(), vec![1, 2, 3].into_iter().collect());
 }

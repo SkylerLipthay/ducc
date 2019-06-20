@@ -4,7 +4,8 @@ use ducc::Ducc;
 use error::{Error, Result};
 use function::Function;
 use object::Object;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, BTreeSet, HashSet};
+use std::cmp::{Eq, Ord};
 use std::hash::{BuildHasher, Hash};
 use std::string::String as StdString;
 use string::String;
@@ -176,6 +177,44 @@ where
         match value {
             Value::Object(o) => o.properties().collect(),
             value => Err(Error::from_js_conversion(value.type_name(), "BTreeMap")),
+        }
+    }
+}
+
+impl<'ducc, V: ToValue<'ducc>> ToValue<'ducc> for BTreeSet<V> {
+    fn to_value(self, ducc: &'ducc Ducc) -> Result<Value<'ducc>> {
+        let array = ducc.create_array();
+        for v in self.into_iter() {
+            array.push(v)?;
+        }
+        Ok(Value::Array(array))
+    }
+}
+
+impl<'ducc, V: FromValue<'ducc> + Ord> FromValue<'ducc> for BTreeSet<V> {
+    fn from_value(value: Value<'ducc>, _ducc: &'ducc Ducc) -> Result<Self> {
+        match value {
+            Value::Array(a) => a.elements().collect(),
+            value => Err(Error::from_js_conversion(value.type_name(), "BTreeSet")),
+        }
+    }
+}
+
+impl<'ducc, V: ToValue<'ducc>> ToValue<'ducc> for HashSet<V> {
+    fn to_value(self, ducc: &'ducc Ducc) -> Result<Value<'ducc>> {
+        let array = ducc.create_array();
+        for v in self.into_iter() {
+            array.push(v)?;
+        }
+        Ok(Value::Array(array))
+    }
+}
+
+impl<'ducc, V: FromValue<'ducc> + Hash + Eq> FromValue<'ducc> for HashSet<V> {
+    fn from_value(value: Value<'ducc>, _ducc: &'ducc Ducc) -> Result<Self> {
+        match value {
+            Value::Array(a) => a.elements().collect(),
+            value => Err(Error::from_js_conversion(value.type_name(), "HashSet")),
         }
     }
 }
