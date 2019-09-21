@@ -10,4 +10,5 @@ license = "MIT"
 serde = "1.0"
 
 [dependencies.ducc]
+version = "0.1"
 path = "../ducc"
