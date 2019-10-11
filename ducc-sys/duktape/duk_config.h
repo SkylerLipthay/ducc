@@ -15,6 +15,8 @@
 // interface and increased compatibility.
 #if defined(DUK_F_WINDOWS)
 #define DUK_USE_DATE_NOW_WINDOWS
+#undef DUK_USE_DATE_NOW_WINDOWS_SUBMS
+#define DUK_USE_DATE_GET_NOW(ctx) duk_bi_date_get_now_windows()
 #endif
 
 #ifdef RUST_DUK_USE_EXEC_TIMEOUT_CHECK
