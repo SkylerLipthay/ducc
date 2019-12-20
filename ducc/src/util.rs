@@ -114,11 +114,11 @@ const ERROR_KEY: [i8; 7] = hidden_i8str!('e', 'r', 'r', 'o', 'r');
 
 unsafe extern "C" fn error_finalizer(ctx: *mut ffi::duk_context) -> ffi::duk_ret_t {
     ffi::duk_require_stack(ctx, 1);
-    ffi::duk_get_prop_string(ctx, 0, ERROR_KEY.as_ptr());
+    ffi::duk_get_prop_string(ctx, 0, ERROR_KEY.as_ptr() as *const _);
     Box::from_raw(ffi::duk_get_pointer(ctx, -1) as *mut Error);
     ffi::duk_pop(ctx);
     ffi::duk_push_undefined(ctx);
-    ffi::duk_put_prop_string(ctx, 0, ERROR_KEY.as_ptr());
+    ffi::duk_put_prop_string(ctx, 0, ERROR_KEY.as_ptr() as *const _);
     0
 }
 
@@ -154,7 +154,7 @@ pub(crate) unsafe fn push_error(ctx: *mut ffi::duk_context, error: Error) {
             ffi::duk_put_prop_string(ctx, -2, cstr!("message"));
         }
         ffi::duk_push_pointer(ctx, Box::into_raw(desc.cause) as *mut _);
-        ffi::duk_put_prop_string(ctx, -2, ERROR_KEY.as_ptr());
+        ffi::duk_put_prop_string(ctx, -2, ERROR_KEY.as_ptr() as *const _);
         ffi::duk_push_c_function(ctx, Some(error_finalizer), 1);
         ffi::duk_set_finalizer(ctx, -2);
     })
@@ -164,11 +164,11 @@ pub(crate) unsafe fn pop_error(ctx: *mut ffi::duk_context) -> Error {
     assert_stack!(ctx, -1, {
         ffi::duk_require_stack(ctx, 1);
 
-        ffi::duk_get_prop_string(ctx, -1, ERROR_KEY.as_ptr());
+        ffi::duk_get_prop_string(ctx, -1, ERROR_KEY.as_ptr() as *const _);
         let error_ptr = ffi::duk_get_pointer(ctx, -1) as *mut Error;
         ffi::duk_pop(ctx);
         ffi::duk_push_undefined(ctx);
-        ffi::duk_put_prop_string(ctx, -2, ERROR_KEY.as_ptr());
+        ffi::duk_put_prop_string(ctx, -2, ERROR_KEY.as_ptr() as *const _);
         ffi::duk_push_undefined(ctx);
         ffi::duk_set_finalizer(ctx, -2);
         if !error_ptr.is_null() {
@@ -257,11 +257,11 @@ pub(crate) unsafe fn create_heap() -> *mut ffi::duk_context {
     ffi::duk_require_stack(ctx, 1);
 
     ffi::duk_push_pointer(ctx, udata as *mut _);
-    ffi::duk_put_global_string(ctx, UDATA.as_ptr());
+    ffi::duk_put_global_string(ctx, UDATA.as_ptr() as *const _);
 
     let any_map = Box::into_raw(Box::new(AnyMap::new()));
     ffi::duk_push_pointer(ctx, any_map as *mut _);
-    ffi::duk_put_global_string(ctx, ANYMAP.as_ptr());
+    ffi::duk_put_global_string(ctx, ANYMAP.as_ptr() as *const _);
 
     ffi::duk_push_global_object(ctx);
     ffi::duk_del_prop_string(ctx, -1, cstr!("Duktape"));
@@ -273,14 +273,14 @@ pub(crate) unsafe fn create_heap() -> *mut ffi::duk_context {
 pub(crate) unsafe fn get_udata(ctx: *mut ffi::duk_context) -> *mut Udata {
     let _sg = StackGuard::new(ctx);
     ffi::duk_require_stack(ctx, 1);
-    ffi::duk_get_global_string(ctx, UDATA.as_ptr());
+    ffi::duk_get_global_string(ctx, UDATA.as_ptr() as *const _);
     ffi::duk_get_pointer(ctx, -1) as *mut Udata
 }
 
 pub(crate) unsafe fn get_any_map(ctx: *mut ffi::duk_context) -> *mut AnyMap {
     let _sg = StackGuard::new(ctx);
     ffi::duk_require_stack(ctx, 1);
-    ffi::duk_get_global_string(ctx, ANYMAP.as_ptr());
+    ffi::duk_get_global_string(ctx, ANYMAP.as_ptr() as *const _);
     ffi::duk_get_pointer(ctx, -1) as *mut AnyMap
 }
 

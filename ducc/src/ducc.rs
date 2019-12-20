@@ -364,7 +364,7 @@ impl Ducc {
             ffi::duk_push_heap_stash(self.ctx);
 
             // Generate a unique stash key.
-            ffi::duk_get_global_string(self.ctx, STASH_KEY.as_ptr());
+            ffi::duk_get_global_string(self.ctx, STASH_KEY.as_ptr() as *const _);
             let mut stash_key: ffi::duk_uarridx_t = ffi::duk_to_number(self.ctx, -1) as u32;
             ffi::duk_pop(self.ctx);
             let mut has_wrapped = false;
@@ -387,7 +387,7 @@ impl Ducc {
                 }
             }
             ffi::duk_push_uint(self.ctx, stash_key);
-            ffi::duk_put_global_string(self.ctx, STASH_KEY.as_ptr());
+            ffi::duk_put_global_string(self.ctx, STASH_KEY.as_ptr() as *const _);
 
             ffi::duk_dup(self.ctx, -2);
             ffi::duk_put_prop_index(self.ctx, -2, stash_key);
