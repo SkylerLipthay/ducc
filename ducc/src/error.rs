@@ -45,7 +45,7 @@ pub enum ErrorKind {
     /// A custom error that occurs during runtime.
     ///
     /// This can be used for returning user-defined errors from callbacks.
-    ExternalError(Box<RuntimeError + 'static>),
+    ExternalError(Box<dyn RuntimeError + 'static>),
     /// An error specifying the variable that was called as a function was not a function.
     NotAFunction,
 }
@@ -304,13 +304,13 @@ pub trait RuntimeError: fmt::Debug {
     }
 }
 
-impl RuntimeError {
+impl dyn RuntimeError {
     /// Attempts to downcast this failure to a concrete type by reference.
     ///
     /// If the underlying error is not of type `T`, this will return `None`.
     pub fn downcast_ref<T: RuntimeError + 'static>(&self) -> Option<&T> {
         if self.__private_get_type_id__() == TypeId::of::<T>() {
-            unsafe { Some(&*(self as *const RuntimeError as *const T)) }
+            unsafe { Some(&*(self as *const dyn RuntimeError as *const T)) }
         } else {
             None
         }
