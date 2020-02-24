@@ -5,7 +5,7 @@ use ffi;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 use std::{process, ptr, slice};
-use std::sync::{Once, ONCE_INIT};
+use std::sync::Once;
 use types::AnyMap;
 
 // Throws an error if `$body` results in a change of `$ctx`'s stack size that isn't exactly equal to
@@ -314,7 +314,7 @@ impl Udata {
 // `duk_context` is created outside of `Ducc`. Long story short: use `Ducc` and don't use
 // `duk_create_heap` directly.
 fn ensure_exec_timeout_check_exists() {
-    static INIT: Once = ONCE_INIT;
+    static INIT: Once = Once::new();
     INIT.call_once(|| {
         unsafe { ffi::ducc_set_exec_timeout_function(Some(timeout_func)); }
     });

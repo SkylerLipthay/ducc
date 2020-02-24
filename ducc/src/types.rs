@@ -30,6 +30,6 @@ impl<'ducc> Drop for Ref<'ducc> {
 }
 
 pub(crate) type Callback<'ducc, 'a> =
-    Box<Fn(&'ducc Ducc, Value<'ducc>, Values<'ducc>) -> Result<Value<'ducc>> + 'a>;
+    Box<dyn Fn(&'ducc Ducc, Value<'ducc>, Values<'ducc>) -> Result<Value<'ducc>> + 'a>;
 
-pub(crate) type AnyMap = BTreeMap<String, Box<Any + 'static>>;
+pub(crate) type AnyMap = BTreeMap<String, Box<dyn Any + 'static>>;

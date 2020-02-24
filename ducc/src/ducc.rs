@@ -103,7 +103,7 @@ impl Ducc {
     /// Inserts any sort of keyed value of type `T` into the `Ducc`, typically for later retrieval
     /// from within Rust functions called from within JavaScript. If a value already exists with the
     /// key, it is returned.
-    pub fn set_user_data<K, T>(&mut self, key: K, data: T) -> Option<Box<Any + 'static>>
+    pub fn set_user_data<K, T>(&mut self, key: K, data: T) -> Option<Box<dyn Any + 'static>>
     where
         K: ToString,
         T: Any + 'static,
@@ -129,7 +129,7 @@ impl Ducc {
 
     /// Removes and returns a user data value by its key. Returns `None` if no value exists with the
     /// key.
-    pub fn remove_user_data(&mut self, key: &str) -> Option<Box<Any + 'static>> {
+    pub fn remove_user_data(&mut self, key: &str) -> Option<Box<dyn Any + 'static>> {
         unsafe {
             let any_map = get_any_map(self.ctx);
             (*any_map).remove(key)
@@ -436,5 +436,5 @@ pub struct ExecSettings {
     /// possible, or `false` if the execution should continue. This is useful for implementing an
     /// execution timeout. This function is only called during JavaScript execution, and will not be
     /// called while execution is within native Rust code.
-    pub cancel_fn: Option<Box<Fn() -> bool>>,
+    pub cancel_fn: Option<Box<dyn Fn() -> bool>>,
 }
