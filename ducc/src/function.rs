@@ -83,7 +83,7 @@ pub(crate) fn create_callback<'ducc, 'callback>(
             }
 
             ffi::duk_push_current_function(ctx);
-            ffi::duk_get_prop_string(ctx, -1, FUNC.as_ptr());
+            ffi::duk_get_prop_string(ctx, -1, FUNC.as_ptr() as *const _);
             let func_ptr = ffi::duk_get_pointer(ctx, -1) as *mut Callback;
             ffi::duk_pop_n(ctx, 2);
 
@@ -114,12 +114,12 @@ pub(crate) fn create_callback<'ducc, 'callback>(
 
     unsafe extern "C" fn finalizer(ctx: *mut ffi::duk_context) -> ffi::duk_ret_t {
         ffi::duk_require_stack(ctx, 1);
-        ffi::duk_get_prop_string(ctx, 0, FUNC.as_ptr());
+        ffi::duk_get_prop_string(ctx, 0, FUNC.as_ptr() as *const _);
         let callback = Box::from_raw(ffi::duk_get_pointer(ctx, -1) as *mut Callback);
         drop(callback);
         ffi::duk_pop(ctx);
         ffi::duk_push_undefined(ctx);
-        ffi::duk_put_prop_string(ctx, 0, FUNC.as_ptr());
+        ffi::duk_put_prop_string(ctx, 0, FUNC.as_ptr() as *const _);
         0
     }
 
@@ -128,7 +128,7 @@ pub(crate) fn create_callback<'ducc, 'callback>(
             ffi::duk_require_stack(ducc.ctx, 2);
             ffi::ducc_push_c_function_nothrow(ducc.ctx, Some(wrapper), ffi::DUK_VARARGS);
             ffi::duk_push_pointer(ducc.ctx, Box::into_raw(Box::new(func)) as *mut _);
-            ffi::duk_put_prop_string(ducc.ctx, -2, FUNC.as_ptr());
+            ffi::duk_put_prop_string(ducc.ctx, -2, FUNC.as_ptr() as *const _);
             ffi::duk_push_c_function(ducc.ctx, Some(finalizer), 1);
             ffi::duk_set_finalizer(ducc.ctx, -2);
             Function(ducc.pop_ref())
