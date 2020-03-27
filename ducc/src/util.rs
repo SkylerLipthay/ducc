@@ -164,14 +164,35 @@ pub(crate) unsafe fn pop_error(ctx: *mut ffi::duk_context) -> Error {
     assert_stack!(ctx, -1, {
         ffi::duk_require_stack(ctx, 1);
 
+        // We have to be careful here because the thrown error might not necessarily be an object
+        // (or object coercible). So, we only clear the finalizer on the error if it has actually
+        // been set, and then we only remove the hidden `ERROR_KEY` property if it exists.
+        if ffi::duk_is_object_coercible(ctx, -1) == 0 {
+            ffi::duk_pop(ctx);
+            return Error {
+                kind: ErrorKind::RuntimeError {
+                    code: RuntimeErrorCode::Error,
+                    name: "Error".to_string(),
+                },
+                context: vec![],
+            };
+        }
+
         ffi::duk_get_prop_string(ctx, -1, ERROR_KEY.as_ptr() as *const _);
         let error_ptr = ffi::duk_get_pointer(ctx, -1) as *mut Error;
         ffi::duk_pop(ctx);
-        ffi::duk_push_undefined(ctx);
-        ffi::duk_put_prop_string(ctx, -2, ERROR_KEY.as_ptr() as *const _);
-        ffi::duk_push_undefined(ctx);
-        ffi::duk_set_finalizer(ctx, -2);
+
+        ffi::duk_get_finalizer(ctx, -1);
+        let has_finalizer = ffi::duk_is_undefined(ctx, -1) == 0;
+        ffi::duk_pop(ctx);
+        if has_finalizer {
+            ffi::duk_push_undefined(ctx);
+            ffi::duk_set_finalizer(ctx, -2);
+        }
+
         if !error_ptr.is_null() {
+            ffi::duk_push_undefined(ctx);
+            ffi::duk_put_prop_string(ctx, -2, ERROR_KEY.as_ptr() as *const _);
             ffi::duk_pop(ctx);
             return *Box::from_raw(error_ptr);
         }

@@ -1,5 +1,6 @@
-use ducc::Ducc;
+use ducc::{Ducc, ExecSettings};
 use ffi;
+use value::Value;
 use util::*;
 
 #[test]
@@ -70,4 +71,14 @@ fn test_protect_duktape_closure_err() {
             assert!(result.is_err());
         });
     }
+}
+
+#[test]
+fn test_throw_non_object_error() {
+    let ducc = Ducc::new();
+    assert!(ducc.exec::<Value>("throw 'test'", None, ExecSettings::default()).is_err());
+    assert!(ducc.exec::<Value>("throw 1", None, ExecSettings::default()).is_err());
+    assert!(ducc.exec::<Value>("throw true", None, ExecSettings::default()).is_err());
+    assert!(ducc.exec::<Value>("throw undefined", None, ExecSettings::default()).is_err());
+    assert!(ducc.exec::<Value>("throw null", None, ExecSettings::default()).is_err());
 }
