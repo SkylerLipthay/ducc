@@ -3,6 +3,7 @@ use ffi;
 use std::marker::PhantomData;
 use types::Ref;
 use util::{protect_duktape_closure, StackGuard};
+use function::Function;
 use value::{FromValue, ToValue, ToValues, Value};
 
 /// Reference to a JavaScript object (guaranteed to not be an array or function).
@@ -54,6 +55,62 @@ impl<'ducc> Object<'ducc> {
                 ducc.push_value(value);
                 protect_duktape_closure(ducc.ctx, 3, 0, |ctx| {
                     ffi::duk_put_prop(ctx, -3);
+                })
+            })
+        }
+    }
+
+    /// Defines a property using given key and descriptor
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let obj = ducc.create_object();
+    /// let get = ducc.create_function(|inv| Ok(24));
+    /// object.define_prop("prop", PropertyDescriptor::<()> {
+    ///     get: Some(get),
+    ///     ..Default::default()
+    /// }).unwrap();
+    /// ```
+    pub fn define_prop<K: ToValue<'ducc>, V: ToValue<'ducc>>(&self, key: K, desc: PropertyDescriptor<'ducc, V>) -> Result<()> {
+        let ducc = self.0.ducc;
+        let key = key.to_value(ducc)?;
+
+        let mut flags =
+            ffi::DUK_DEFPROP_HAVE_ENUMERABLE |
+            ffi::DUK_DEFPROP_HAVE_CONFIGURABLE;
+        if desc.writable {
+            flags |= ffi::DUK_DEFPROP_HAVE_WRITABLE | ffi::DUK_DEFPROP_WRITABLE;
+        }
+        if desc.enumerable {
+            flags |= ffi::DUK_DEFPROP_ENUMERABLE;
+        }
+        if desc.configurable {
+            flags |= ffi::DUK_DEFPROP_CONFIGURABLE;
+        }
+
+        unsafe {
+            assert_stack!(ducc.ctx, 0, {
+                ducc.push_ref(&self.0);
+                ducc.push_value(key);
+                let mut num_args = 2;
+                if let Some(val) = desc.value {
+                    ducc.push_value(val.to_value(ducc)?);
+                    flags |= ffi::DUK_DEFPROP_HAVE_VALUE;
+                    num_args += 1;
+                }
+                if let Some(get) = desc.get {
+                    ducc.push_value(get.to_value(ducc)?);
+                    flags |= ffi::DUK_DEFPROP_HAVE_GETTER;
+                    num_args += 1;
+                }
+                if let Some(set) = desc.set {
+                    ducc.push_value(set.to_value(ducc)?);
+                    flags |= ffi::DUK_DEFPROP_HAVE_SETTER;
+                    num_args += 1;
+                }
+                protect_duktape_closure(ducc.ctx, num_args, 0, |ctx| {
+                    ffi::duk_def_prop(ctx, -num_args, flags);
                 })
             })
         }
@@ -152,6 +209,18 @@ impl<'ducc> Object<'ducc> {
             }
         }
     }
+}
+
+#[derive(Default)]
+pub struct PropertyDescriptor<'ducc, V>
+where
+    V: ToValue<'ducc> {
+    pub enumerable: bool,
+    pub configurable: bool,
+    pub writable: bool,
+    pub value: Option<V>,
+    pub get: Option<Function<'ducc>>,
+    pub set: Option<Function<'ducc>>,
 }
 
 pub struct Properties<'ducc, K, V> {

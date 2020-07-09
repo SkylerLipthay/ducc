@@ -1,8 +1,10 @@
 use ducc::Ducc;
 use error::Result;
 use function::Invocation;
-use object::Object;
+use object::{Object, PropertyDescriptor};
 use value::Value;
+use std::sync::{Arc, Mutex};
+use std::cell::RefCell;
 
 #[test]
 fn contains_key() {
@@ -33,6 +35,40 @@ fn set_get() {
     assert_eq!(object.get::<_, String>("a").unwrap(), "123");
     assert_eq!(object.get::<_, String>("123").unwrap(), "a");
     assert_eq!(object.get::<_, String>(123).unwrap(), "a");
+}
+
+#[test]
+fn define_prop() {
+    let mut ducc = Ducc::new();
+    let object = ducc.create_object();
+
+    object.define_prop("a", PropertyDescriptor {
+        value: Some(123),
+        ..Default::default()
+    }).unwrap();
+    assert_eq!(object.get::<_, i8>("a").unwrap(), 123);
+
+    let get = ducc.create_function(|inv| Ok(24));
+    object.define_prop("b", PropertyDescriptor::<()> {
+        get: Some(get),
+        ..Default::default()
+    }).unwrap();
+    assert_eq!(object.get::<_, i8>("b").unwrap(), 24);
+
+    let mut v = Arc::new(Mutex::new(0));
+    let mut v_c = Arc::clone(&v);
+    let set = ducc.create_function(move|inv| {
+        let mut c = Arc::clone(&v_c);
+        let (a,): (i8,) = inv.args.into(inv.ducc)?;
+        *c.lock().unwrap() = a;
+        Ok(())
+    });
+    object.define_prop("c", PropertyDescriptor::<()> {
+        set: Some(set),
+        ..Default::default()
+    }).unwrap();
+    object.set::<_, i8>("c", 24).unwrap();
+    assert_eq!(*v.lock().unwrap(), 24);
 }
 
 #[test]
