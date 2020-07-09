@@ -20,6 +20,6 @@ pub use bytes::Bytes;
 pub use ducc::{Ducc, ExecSettings};
 pub use error::{Error, ErrorKind, Result, ResultExt, RuntimeError, RuntimeErrorCode};
 pub use function::{Function, Invocation};
-pub use object::{Object, Properties};
+pub use object::{Object, Properties, PropertyDescriptor};
 pub use string::String;
 pub use value::{FromValue, FromValues, ToValue, ToValues, Value, Values, Variadic};
