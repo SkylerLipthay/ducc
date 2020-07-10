@@ -1,8 +1,8 @@
 use ducc::Ducc;
 use error::Result;
 use function::Invocation;
-use object::Object;
-use value::Value;
+use object::{Object, PropertyDescriptor};
+use value::{Value, ToValue};
 
 #[test]
 fn contains_key() {
@@ -33,6 +33,29 @@ fn set_get() {
     assert_eq!(object.get::<_, String>("a").unwrap(), "123");
     assert_eq!(object.get::<_, String>("123").unwrap(), "a");
     assert_eq!(object.get::<_, String>(123).unwrap(), "a");
+}
+
+#[test]
+fn define_prop() {
+    let ducc = Ducc::new();
+    let object = ducc.create_object();
+
+    let val = 123i8.to_value(&ducc).unwrap();
+    object.define_prop("a", PropertyDescriptor::new().writable(true).value(val)).unwrap();
+    assert_eq!(object.get::<_, i8>("a").unwrap(), 123);
+
+    let get = ducc.create_function(|_| Ok(24));
+    object.define_prop("b", PropertyDescriptor::new().getter(get)).unwrap();
+    assert_eq!(object.get::<_, i8>("b").unwrap(), 24);
+
+    let set = ducc.create_function(move|inv| {
+        let (a,): (i8,) = inv.args.into(inv.ducc)?;
+        inv.ducc.globals().set("c_value", a).unwrap();
+        Ok(())
+    });
+    object.define_prop("c", PropertyDescriptor::new().setter(set)).unwrap();
+    object.set("c", 24).unwrap();
+    assert_eq!(ducc.globals().get::<_, i8>("c_value").unwrap(), 24);
 }
 
 #[test]
