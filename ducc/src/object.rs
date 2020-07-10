@@ -72,7 +72,7 @@ impl<'ducc> Object<'ducc> {
     ///     ..Default::default()
     /// }).unwrap();
     /// ```
-    pub fn define_prop<K: ToValue<'ducc>, V: ToValue<'ducc>>(&self, key: K, desc: PropertyDescriptor<'ducc, V>) -> Result<()> {
+    pub fn define_prop<K: ToValue<'ducc>>(&self, key: K, desc: PropertyDescriptor<'ducc>) -> Result<()> {
         let ducc = self.0.ducc;
         let key = key.to_value(ducc)?;
 
@@ -94,20 +94,30 @@ impl<'ducc> Object<'ducc> {
                 ducc.push_ref(&self.0);
                 ducc.push_value(key);
                 let mut num_args = 2;
-                if let Some(val) = desc.value {
-                    ducc.push_value(val.to_value(ducc)?);
-                    flags |= ffi::DUK_DEFPROP_HAVE_VALUE;
-                    num_args += 1;
-                }
-                if let Some(get) = desc.get {
-                    ducc.push_value(get.to_value(ducc)?);
-                    flags |= ffi::DUK_DEFPROP_HAVE_GETTER;
-                    num_args += 1;
-                }
-                if let Some(set) = desc.set {
-                    ducc.push_value(set.to_value(ducc)?);
-                    flags |= ffi::DUK_DEFPROP_HAVE_SETTER;
-                    num_args += 1;
+                match desc.source {
+                    PropertySource::Undefined => {},
+                    PropertySource::Value(val) => {
+                        ducc.push_value(val);
+                        flags |= ffi::DUK_DEFPROP_HAVE_VALUE;
+                        num_args += 1;
+                    },
+                    PropertySource::GetSet(get, set) => {
+                        ducc.push_value(get.to_value(ducc)?);
+                        ducc.push_value(set.to_value(ducc)?);
+                        flags |=
+                            ffi::DUK_DEFPROP_HAVE_GETTER | ffi::DUK_DEFPROP_HAVE_SETTER;
+                        num_args += 2;
+                    },
+                    PropertySource::Get(get) => {
+                        ducc.push_value(get.to_value(ducc)?);
+                        flags |= ffi::DUK_DEFPROP_HAVE_GETTER;
+                        num_args += 1;
+                    },
+                    PropertySource::Set(set) => {
+                        ducc.push_value(set.to_value(ducc)?);
+                        flags |= ffi::DUK_DEFPROP_HAVE_SETTER;
+                        num_args += 1;
+                    }
                 }
                 protect_duktape_closure(ducc.ctx, num_args, 0, |ctx| {
                     ffi::duk_def_prop(ctx, -num_args, flags);
@@ -211,16 +221,64 @@ impl<'ducc> Object<'ducc> {
     }
 }
 
-#[derive(Default)]
-pub struct PropertyDescriptor<'ducc, V>
-where
-    V: ToValue<'ducc> {
-    pub enumerable: bool,
-    pub configurable: bool,
-    pub writable: bool,
-    pub value: Option<V>,
-    pub get: Option<Function<'ducc>>,
-    pub set: Option<Function<'ducc>>,
+enum PropertySource<'ducc> {
+    Undefined,
+    Value(Value<'ducc>),
+    GetSet(Function<'ducc>, Function<'ducc>),
+    Get(Function<'ducc>),
+    Set(Function<'ducc>),
+}
+
+pub struct PropertyDescriptor<'ducc> {
+    enumerable: bool,
+    configurable: bool,
+    writable: bool,
+    source: PropertySource<'ducc>
+}
+impl <'ducc> PropertyDescriptor<'ducc> {
+    pub fn new() -> PropertyDescriptor<'ducc> {
+        PropertyDescriptor {
+            enumerable: false,
+            configurable: false,
+            writable: false,
+            source: PropertySource::Undefined
+        }
+    }
+
+    pub fn enumerable<'a>(&'a mut self, b: bool) -> &'a mut PropertyDescriptor<'ducc> {
+        self.enumerable = b;
+        self
+    }
+
+    pub fn configurable<'a>(&'a mut self, b: bool) -> &'a mut PropertyDescriptor<'ducc> {
+        self.configurable = b;
+        self
+    }
+
+    pub fn writable<'a>(&'a mut self, b: bool) -> &'a mut PropertyDescriptor<'ducc> {
+        self.writable = b;
+        self
+    }
+
+    pub fn value(mut self, value: Value<'ducc>) -> PropertyDescriptor<'ducc> {
+        self.source = PropertySource::Value(value);
+        self
+    }
+
+    pub fn getter_setter(mut self, get: Function<'ducc>, set: Function<'ducc>) -> PropertyDescriptor<'ducc> {
+        self.source = PropertySource::GetSet(get, set);
+        self
+    }
+
+    pub fn getter(mut self, get: Function<'ducc>) -> PropertyDescriptor<'ducc> {
+        self.source = PropertySource::Get(get);
+        self
+    }
+
+    pub fn setter(mut self, set: Function<'ducc>) -> PropertyDescriptor<'ducc> {
+        self.source = PropertySource::Set(set);
+        self
+    }
 }
 
 pub struct Properties<'ducc, K, V> {
