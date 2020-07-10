@@ -65,9 +65,11 @@ impl<'ducc> Object<'ducc> {
     /// # Example
     /// 
     /// ```
+    /// # use ducc::{Ducc, PropertyDescriptor};
+    /// # let ducc = Ducc::new();
     /// let obj = ducc.create_object();
     /// let get = ducc.create_function(|inv| Ok(24));
-    /// object.define_prop("prop", PropertyDescriptor::new().getter(get)).unwrap();
+    /// obj.define_prop("prop", PropertyDescriptor::new().getter(get)).unwrap();
     /// ```
     pub fn define_prop<K: ToValue<'ducc>>(&self, key: K, desc: PropertyDescriptor<'ducc>) -> Result<()> {
         let ducc = self.0.ducc;
