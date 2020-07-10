@@ -274,7 +274,7 @@ impl Ducc {
         }
     }
 
-    /// Returns the callstack entry at given level.
+    /// Returns the callstack entry at given level or `None` if given level is invalid (outside the current call stack).
     /// 
     /// # Levels
     /// 
