@@ -274,26 +274,29 @@ impl Ducc {
         }
     }
 
-    /// Returns the callstack entry at given level or `None` if given level is invalid (outside the current call stack).
-    /// 
+    /// Returns the call stack entry at given level or `None` if given level is invalid (outside the
+    /// current call stack).
+    ///
     /// # Levels
-    /// 
-    /// - `-1` is the most recent function called. If the inspect function is invoked from inside
-    ///     a Ducc callback function, this will be the function callback itself.
-    /// - `-2` is the caller of `-1`
-    /// - and so on..
-    /// 
+    ///
+    /// * `-1` is the most recent function called. If the inspect function is invoked from inside a
+    ///     Ducc callback function, this will be the function callback itself.
+    /// * `-2` is the caller of `-1`
+    /// * ... And so on.
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// # use ducc::Ducc;
     /// # let ducc = Ducc::new();
-    /// if let Some(entry) = ducc.inspect_callstack_entry(-2) {
+    /// if let Some(entry) = ducc.inspect_call_stack_entry(-2) {
     ///    let file_name = entry.function.into_object().get::<_, String>("fileName").unwrap();
     ///    println!("Function was called from {} line {}", file_name, entry.line_number);
     /// };
     /// ```
-    pub fn inspect_callstack_entry<'ducc>(&'ducc self, level: i32) -> Option<CallStackEntry<'ducc>> {
+    pub fn inspect_call_stack_entry<'ducc>(&'ducc self, level: i32)
+        -> Option<CallStackEntry<'ducc>>
+    {
         unsafe {
             let _sg = StackGuard::new(self.ctx);
 
@@ -487,15 +490,15 @@ pub struct ExecSettings {
 }
 
 
-/// Internal entry on the callstack as returned by [inspect_callstack_entry](Ducc::inspect_callstack_entry).
+/// Internal entry on the call stack as returned by
+/// [inspect_call_stack_entry](Ducc::inspect_call_stack_entry).
 pub struct CallStackEntry<'ducc> {
-    /// Function being executed. Note that this is a potential sandboxing concern if exposed to untrusted code.
+    /// Function being executed. Note that this is a potential sandboxing concern if exposed to
+    /// untrusted code.
     pub function: Function<'ducc>,
-
     /// Program counter for ECMAScript functions. Zero if executing a native function.
     pub pc: f64,
-
-    /// Line number for ECMAScript functions.
-    /// Zero if executing a native function or if pc-to-line translation data is not available.
+    /// Line number for ECMAScript functions. This is zero if executing a native function or if
+    /// PC-to-line translation data is not available.
     pub line_number: f64
 }

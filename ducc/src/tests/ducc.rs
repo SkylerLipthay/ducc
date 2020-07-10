@@ -32,13 +32,16 @@ fn no_duktape_global() {
 }
 
 #[test]
-fn inspect_callstack() {
+fn inspect_call_stack() {
     let ducc = Ducc::new();
     ducc.globals().set("fun", ducc.create_function(|inv| {
-        let _this = inv.ducc.inspect_callstack_entry(-1).expect("`this` callstack entry was None");
+        let _this = inv.ducc.inspect_call_stack_entry(-1)
+            .expect("`this` call stack entry was None");
 
-        let caller = inv.ducc.inspect_callstack_entry(-2).expect("`caller` callstack entry was None");
-        assert_eq!(caller.function.into_object().get::<_, String>("fileName").unwrap(), "test source");
+        let caller = inv.ducc.inspect_call_stack_entry(-2)
+            .expect("`caller` call stack entry was None");
+        let file_name = caller.function.into_object().get::<_, String>("fileName").unwrap();
+        assert_eq!(file_name, "test source");
         assert_eq!(caller.line_number, 1f64);
 
         Ok(())
