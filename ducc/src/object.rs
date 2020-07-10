@@ -276,7 +276,7 @@ impl <'ducc> PropertyDescriptor<'ducc> {
     }
 
     /// Builds the descriptor with given value for the property
-    pub fn value(mut self, value: Value<'ducc>) -> PropertyDescriptor<'ducc> {
+    pub fn value(mut self, value: Value<'ducc>) -> Self {
         self.source = PropertySource::Value(value);
         self
     }
