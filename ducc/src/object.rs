@@ -252,7 +252,7 @@ impl <'ducc> PropertyDescriptor<'ducc> {
     /// properties on the corresponding object.
     /// 
     /// Defaults to `false`
-    pub fn enumerable<'a>(&'a mut self, b: bool) -> &'a mut PropertyDescriptor<'ducc> {
+    pub fn enumerable(mut self, b: bool) -> Self {
         self.enumerable = Some(b);
         self
     }
@@ -261,7 +261,7 @@ impl <'ducc> PropertyDescriptor<'ducc> {
     /// the property may be deleted from the corresponding object.
     /// 
     /// Defaults to `false`
-    pub fn configurable<'a>(&'a mut self, b: bool) -> &'a mut PropertyDescriptor<'ducc> {
+    pub fn configurable(mut self, b: bool) -> Self {
         self.configurable = Some(b);
         self
     }
@@ -270,7 +270,7 @@ impl <'ducc> PropertyDescriptor<'ducc> {
     /// an assignment operator. Must not be set when using getters or setters.
     /// 
     /// Defaults to `false`
-    pub fn writable<'a>(&'a mut self, b: bool) -> &'a mut PropertyDescriptor<'ducc> {
+    pub fn writable(mut self, b: bool) -> Self {
         self.writable = Some(b);
         self
     }
@@ -282,19 +282,19 @@ impl <'ducc> PropertyDescriptor<'ducc> {
     }
 
     /// Builds the descriptor with a getter and a setter
-    pub fn getter_setter(mut self, get: Function<'ducc>, set: Function<'ducc>) -> PropertyDescriptor<'ducc> {
+    pub fn getter_setter(mut self, get: Function<'ducc>, set: Function<'ducc>) -> Self {
         self.source = PropertySource::GetSet(get, set);
         self
     }
 
     /// Builds the descriptor with a getter
-    pub fn getter(mut self, get: Function<'ducc>) -> PropertyDescriptor<'ducc> {
+    pub fn getter(mut self, get: Function<'ducc>) -> Self {
         self.source = PropertySource::Get(get);
         self
     }
 
     /// Builds the descriptor with a setter
-    pub fn setter(mut self, set: Function<'ducc>) -> PropertyDescriptor<'ducc> {
+    pub fn setter(mut self, set: Function<'ducc>) -> Self {
         self.source = PropertySource::Set(set);
         self
     }

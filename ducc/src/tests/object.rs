@@ -40,7 +40,8 @@ fn define_prop() {
     let ducc = Ducc::new();
     let object = ducc.create_object();
 
-    object.define_prop("a", PropertyDescriptor::new().value(123i8.to_value(&ducc).unwrap())).unwrap();
+    let val = 123i8.to_value(&ducc).unwrap();
+    object.define_prop("a", PropertyDescriptor::new().writable(true).value(val)).unwrap();
     assert_eq!(object.get::<_, i8>("a").unwrap(), 123);
 
     let get = ducc.create_function(|_| Ok(24));
