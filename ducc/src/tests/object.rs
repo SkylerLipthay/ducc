@@ -48,7 +48,7 @@ fn define_prop() {
     object.define_prop("b", PropertyDescriptor::new().getter(get)).unwrap();
     assert_eq!(object.get::<_, i8>("b").unwrap(), 24);
 
-    let set = ducc.create_function(move|inv| {
+    let set = ducc.create_function(move |inv| {
         let (a,): (i8,) = inv.args.into(inv.ducc)?;
         inv.ducc.globals().set("c_value", a).unwrap();
         Ok(())
@@ -56,6 +56,16 @@ fn define_prop() {
     object.define_prop("c", PropertyDescriptor::new().setter(set)).unwrap();
     object.set("c", 24).unwrap();
     assert_eq!(ducc.globals().get::<_, i8>("c_value").unwrap(), 24);
+}
+
+#[test]
+fn define_prop_error() {
+    let ducc = Ducc::new();
+    let object = ducc.create_object();
+    let func = ducc.create_function(|_| Ok(123u8));
+    let desc = PropertyDescriptor::new().writable(true).getter(func);
+    let err = object.define_prop("a", desc).unwrap_err();
+    assert_eq!(vec!["invalid descriptor".to_string()], err.context);
 }
 
 #[test]

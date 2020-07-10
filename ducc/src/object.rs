@@ -61,9 +61,9 @@ impl<'ducc> Object<'ducc> {
     }
 
     /// Defines a property using given key and descriptor
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// # use ducc::{Ducc, PropertyDescriptor};
     /// # let ducc = Ducc::new();
@@ -250,7 +250,7 @@ impl <'ducc> PropertyDescriptor<'ducc> {
 
     /// Whether this property shows up during enumeration of the
     /// properties on the corresponding object.
-    /// 
+    ///
     /// Defaults to `false`
     pub fn enumerable(mut self, b: bool) -> Self {
         self.enumerable = Some(b);
@@ -259,7 +259,7 @@ impl <'ducc> PropertyDescriptor<'ducc> {
 
     /// Whether the type of this property descriptor may be changed and
     /// the property may be deleted from the corresponding object.
-    /// 
+    ///
     /// Defaults to `false`
     pub fn configurable(mut self, b: bool) -> Self {
         self.configurable = Some(b);
@@ -268,7 +268,7 @@ impl <'ducc> PropertyDescriptor<'ducc> {
 
     /// Whether the value associated with the property may be changed with
     /// an assignment operator. Must not be set when using getters or setters.
-    /// 
+    ///
     /// Defaults to `false`
     pub fn writable(mut self, b: bool) -> Self {
         self.writable = Some(b);
