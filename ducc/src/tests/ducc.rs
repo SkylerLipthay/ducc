@@ -2,7 +2,6 @@ use ducc::{Ducc, ExecSettings};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
-use function::Function;
 use value::Value;
 
 #[test]
