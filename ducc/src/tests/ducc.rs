@@ -32,6 +32,21 @@ fn no_duktape_global() {
 }
 
 #[test]
+fn inspect_callstack() {
+    let ducc = Ducc::new();
+    ducc.globals().set("fun", ducc.create_function(|inv| {
+        let _this = inv.ducc.inspect_callstack_entry(-1).expect("`this` callstack entry was None");
+
+        let caller = inv.ducc.inspect_callstack_entry(-2).expect("`caller` callstack entry was None");
+        assert_eq!(caller.function.into_object().get::<_, String>("fileName").unwrap(), "test source");
+        assert_eq!(caller.line_number, 1f64);
+
+        Ok(())
+    })).unwrap();
+    ducc.exec::<()>("fun()", Some("test source"), ExecSettings::default()).unwrap();
+}
+
+#[test]
 fn user_data_drop() {
     let mut ducc = Ducc::new();
     let (count, data) = make_test_user_data();

@@ -274,6 +274,53 @@ impl Ducc {
         }
     }
 
+    /// Returns the callstack entry at given level or `None` if given level is invalid (outside the current call stack).
+    /// 
+    /// # Levels
+    /// 
+    /// - `-1` is the most recent function called. If the inspect function is invoked from inside
+    ///     a Ducc callback function, this will be the function callback itself.
+    /// - `-2` is the caller of `-1`
+    /// - and so on..
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// # use ducc::Ducc;
+    /// # let ducc = Ducc::new();
+    /// if let Some(entry) = ducc.inspect_callstack_entry(-2) {
+    ///    let file_name = entry.function.into_object().get::<_, String>("fileName").unwrap();
+    ///    println!("Function was called from {} line {}", file_name, entry.line_number);
+    /// };
+    /// ```
+    pub fn inspect_callstack_entry<'ducc>(&'ducc self, level: i32) -> Option<CallStackEntry<'ducc>> {
+        unsafe {
+            let _sg = StackGuard::new(self.ctx);
+
+            ffi::duk_inspect_callstack_entry(self.ctx, level);
+            let val = self.pop_value();
+            let entry = match val.as_object() {
+                Some(obj) => obj,
+                None => return None
+            };
+
+            let keys = (
+                entry.get::<_, Function>("function"),
+                entry.get::<_, f64>("pc"),
+                entry.get::<_, f64>("lineNumber"),
+            );
+
+            match keys {
+                (Ok(func), Ok(pc), Ok(line_number)) => Some(CallStackEntry::<'ducc> {
+                    function: func,
+                    pc: pc,
+                    line_number: line_number
+                }),
+                _ => None
+            }
+        }
+    }
+
     pub(crate) unsafe fn push_value(&self, value: Value) {
         assert_stack!(self.ctx, 1, {
             match value {
@@ -437,4 +484,18 @@ pub struct ExecSettings {
     /// execution timeout. This function is only called during JavaScript execution, and will not be
     /// called while execution is within native Rust code.
     pub cancel_fn: Option<Box<dyn Fn() -> bool>>,
+}
+
+
+/// Internal entry on the callstack as returned by [inspect_callstack_entry](Ducc::inspect_callstack_entry).
+pub struct CallStackEntry<'ducc> {
+    /// Function being executed. Note that this is a potential sandboxing concern if exposed to untrusted code.
+    pub function: Function<'ducc>,
+
+    /// Program counter for ECMAScript functions. Zero if executing a native function.
+    pub pc: f64,
+
+    /// Line number for ECMAScript functions.
+    /// Zero if executing a native function or if pc-to-line translation data is not available.
+    pub line_number: f64
 }
