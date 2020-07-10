@@ -67,27 +67,28 @@ impl<'ducc> Object<'ducc> {
     /// ```
     /// let obj = ducc.create_object();
     /// let get = ducc.create_function(|inv| Ok(24));
-    /// object.define_prop("prop", PropertyDescriptor::<()> {
-    ///     get: Some(get),
-    ///     ..Default::default()
-    /// }).unwrap();
+    /// object.define_prop("prop", PropertyDescriptor::new().getter(get)).unwrap();
     /// ```
     pub fn define_prop<K: ToValue<'ducc>>(&self, key: K, desc: PropertyDescriptor<'ducc>) -> Result<()> {
         let ducc = self.0.ducc;
         let key = key.to_value(ducc)?;
 
-        let mut flags =
-            ffi::DUK_DEFPROP_HAVE_ENUMERABLE |
-            ffi::DUK_DEFPROP_HAVE_CONFIGURABLE;
-        if desc.writable {
-            flags |= ffi::DUK_DEFPROP_HAVE_WRITABLE | ffi::DUK_DEFPROP_WRITABLE;
-        }
-        if desc.enumerable {
-            flags |= ffi::DUK_DEFPROP_ENUMERABLE;
-        }
-        if desc.configurable {
-            flags |= ffi::DUK_DEFPROP_CONFIGURABLE;
-        }
+        let mut flags = 0;
+        flags |= match desc.writable {
+            Some(true) => ffi::DUK_DEFPROP_HAVE_WRITABLE | ffi::DUK_DEFPROP_WRITABLE,
+            Some(false) => ffi::DUK_DEFPROP_HAVE_WRITABLE,
+            None => 0
+        };
+        flags |= match desc.enumerable {
+            Some(true) => ffi::DUK_DEFPROP_HAVE_ENUMERABLE | ffi::DUK_DEFPROP_ENUMERABLE,
+            Some(false) => ffi::DUK_DEFPROP_HAVE_ENUMERABLE,
+            None => 0
+        };
+        flags |= match desc.configurable {
+            Some(true) => ffi::DUK_DEFPROP_HAVE_CONFIGURABLE | ffi::DUK_DEFPROP_CONFIGURABLE,
+            Some(false) => ffi::DUK_DEFPROP_HAVE_CONFIGURABLE,
+            None => 0
+        };
 
         unsafe {
             assert_stack!(ducc.ctx, 0, {
@@ -230,51 +231,67 @@ enum PropertySource<'ducc> {
 }
 
 pub struct PropertyDescriptor<'ducc> {
-    enumerable: bool,
-    configurable: bool,
-    writable: bool,
+    enumerable: Option<bool>,
+    configurable: Option<bool>,
+    writable: Option<bool>,
     source: PropertySource<'ducc>
 }
 impl <'ducc> PropertyDescriptor<'ducc> {
     pub fn new() -> PropertyDescriptor<'ducc> {
         PropertyDescriptor {
-            enumerable: false,
-            configurable: false,
-            writable: false,
+            enumerable: None,
+            configurable: None,
+            writable: None,
             source: PropertySource::Undefined
         }
     }
 
+    /// Whether this property shows up during enumeration of the
+    /// properties on the corresponding object.
+    /// 
+    /// Defaults to `false`
     pub fn enumerable<'a>(&'a mut self, b: bool) -> &'a mut PropertyDescriptor<'ducc> {
-        self.enumerable = b;
+        self.enumerable = Some(b);
         self
     }
 
+    /// Whether the type of this property descriptor may be changed and
+    /// the property may be deleted from the corresponding object.
+    /// 
+    /// Defaults to `false`
     pub fn configurable<'a>(&'a mut self, b: bool) -> &'a mut PropertyDescriptor<'ducc> {
-        self.configurable = b;
+        self.configurable = Some(b);
         self
     }
 
+    /// Whether the value associated with the property may be changed with
+    /// an assignment operator. Must not be set when using getters or setters.
+    /// 
+    /// Defaults to `false`
     pub fn writable<'a>(&'a mut self, b: bool) -> &'a mut PropertyDescriptor<'ducc> {
-        self.writable = b;
+        self.writable = Some(b);
         self
     }
 
+    /// Builds the descriptor with given value for the property
     pub fn value(mut self, value: Value<'ducc>) -> PropertyDescriptor<'ducc> {
         self.source = PropertySource::Value(value);
         self
     }
 
+    /// Builds the descriptor with a getter and a setter
     pub fn getter_setter(mut self, get: Function<'ducc>, set: Function<'ducc>) -> PropertyDescriptor<'ducc> {
         self.source = PropertySource::GetSet(get, set);
         self
     }
 
+    /// Builds the descriptor with a getter
     pub fn getter(mut self, get: Function<'ducc>) -> PropertyDescriptor<'ducc> {
         self.source = PropertySource::Get(get);
         self
     }
 
+    /// Builds the descriptor with a setter
     pub fn setter(mut self, set: Function<'ducc>) -> PropertyDescriptor<'ducc> {
         self.source = PropertySource::Set(set);
         self
