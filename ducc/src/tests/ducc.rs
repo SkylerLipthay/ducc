@@ -32,6 +32,16 @@ fn no_duktape_global() {
 }
 
 #[test]
+fn inspect_callstack() {
+    let ducc = Ducc::new();
+    ducc.globals().set("fun", ducc.create_function(|inv| {
+        inv.ducc.inspect_callstack_entry(-1).expect("callstack entry was None");
+        Ok(())
+    })).unwrap();
+    ducc.globals().get::<_, Function>("fun").unwrap().call::<(), ()>(()).unwrap();
+}
+
+#[test]
 fn user_data_drop() {
     let mut ducc = Ducc::new();
     let (count, data) = make_test_user_data();
