@@ -51,6 +51,33 @@ impl<'ducc> Function<'ducc> {
         }
     }
 
+    /// Calls the function as if it is a constructor function with given arguments
+    pub fn call_new<A, R>(&self, args: A) -> Result<R>
+    where
+        A: ToValues<'ducc>,
+        R: FromValue<'ducc>,
+    {
+        let ducc = self.0.ducc;
+        let args = args.to_values(ducc)?;
+        let num_args = args.len() as ffi::duk_idx_t;
+
+        unsafe {
+            assert_stack!(ducc.ctx, 0, {
+                ducc.push_ref(&self.0);
+                for arg in args.into_vec().into_iter() {
+                    ducc.push_value(arg);
+                }
+
+                ffi::duk_require_stack(ducc.ctx, 1);
+                if ffi::duk_pnew(ducc.ctx, num_args) == 0 {
+                    FromValue::from_value(ducc.pop_value(), ducc)
+                } else {
+                    Err(pop_error(ducc.ctx))
+                }
+            })
+        }
+    }
+
     /// Consumes the function and returns it as a JavaScript object. This is inexpensive, since a
     /// function *is* an object.
     pub fn into_object(self) -> Object<'ducc> {

@@ -2,6 +2,7 @@ use ducc::{Ducc, ExecSettings};
 use error::{Error, ErrorKind, Result, ResultExt};
 use function::{Function, Invocation};
 use value::Value;
+use object::Object;
 
 #[test]
 fn js_function() {
@@ -111,6 +112,16 @@ fn rust_closure_mut_callback_error() {
         Err(Error { kind: ErrorKind::RecursiveMutCallback, .. }) => { },
         other => panic!("incorrect result: {:?}", other),
     };
+}
+
+#[test]
+fn js_constructor() {
+    let ducc = Ducc::new();
+    let func: Value = ducc.compile("(function(x) { this.x = x; })", None).unwrap()
+        .call(()).unwrap();
+    assert!(func.is_function());
+    let value: Object = func.as_function().unwrap().call_new((10,)).unwrap();
+    assert_eq!(10, value.get("x").unwrap());
 }
 
 #[test]
