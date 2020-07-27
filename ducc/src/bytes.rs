@@ -15,7 +15,7 @@ impl<'ducc> Bytes<'ducc> {
             let ctx = ducc.ctx;
             assert_stack!(ctx, 0, {
                 ducc.push_ref(&self.0);
-                assert!(ffi::duk_is_buffer(ctx, -1) != 0);
+                assert!(ffi::duk_is_buffer_data(ctx, -1) != 0);
                 let mut len = 0;
                 let data = ffi::duk_get_buffer_data(ctx, -1, &mut len);
                 assert!(!data.is_null());
