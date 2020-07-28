@@ -379,17 +379,16 @@ impl Ducc {
                 ffi::DUK_TYPE_STRING => {
                     Value::String(String(self.pop_ref()))
                 },
-                ffi::DUK_TYPE_OBJECT if ffi::duk_is_buffer_data(self.ctx, -1) == 0 => {
-                    if ffi::duk_is_function(self.ctx, -1) != 0 {
+                ffi::DUK_TYPE_OBJECT | ffi::DUK_TYPE_BUFFER => {
+                    if ffi::duk_is_buffer_data(self.ctx, -1) != 0 {
+                        Value::Bytes(Bytes(self.pop_ref()))
+                    } else if ffi::duk_is_function(self.ctx, -1) != 0 {
                         Value::Function(Function(self.pop_ref()))
                     } else if ffi::duk_is_array(self.ctx, -1) != 0 {
                         Value::Array(Array(self.pop_ref()))
                     } else {
                         Value::Object(Object(self.pop_ref()))
                     }
-                },
-                ffi::DUK_TYPE_BUFFER | _ if ffi::duk_is_buffer_data(self.ctx, -1) != 0 => {
-                    Value::Bytes(Bytes(self.pop_ref()))
                 },
                 _ => Value::Undefined,
             }
