@@ -47,7 +47,7 @@ impl<'ducc, T: ToValue<'ducc>> ToValue<'ducc> for Option<T> {
 impl<'ducc, T: FromValue<'ducc>> FromValue<'ducc> for Option<T> {
     fn from_value(value: Value<'ducc>, ducc: &'ducc Ducc) -> Result<Self> {
         match value {
-            Value::Null => Ok(None),
+            Value::Null | Value::Undefined => Ok(None),
             value => Ok(Some(T::from_value(value, ducc)?)),
         }
     }
