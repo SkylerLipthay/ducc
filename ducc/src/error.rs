@@ -36,6 +36,8 @@ pub enum ErrorKind {
         code: RuntimeErrorCode,
         /// A string representation of the type of error.
         name: String,
+        /// Printable traceback related to the error
+        stack: Option<String>
     },
     /// A mutable callback has triggered JavaScript code that has called the same mutable callback
     /// again.
@@ -155,8 +157,12 @@ impl fmt::Display for Error {
             ErrorKind::FromJsConversionError { from, to } => {
                 write!(fmt, "error converting JavaScript {} to {}", from, to)
             },
-            ErrorKind::RuntimeError { ref name, .. } => {
-                write!(fmt, "JavaScript runtime error ({})", name)
+            ErrorKind::RuntimeError { ref name, ref stack, .. } => {
+                let stack = match stack {
+                    Some(s) => s,
+                    None => ""
+                };
+                write!(fmt, "JavaScript runtime error ({}): {}", name, stack)
             },
             ErrorKind::RecursiveMutCallback => write!(fmt, "mutable callback called recursively"),
             ErrorKind::NotAFunction => write!(fmt, "tried to a call a non-function"),
