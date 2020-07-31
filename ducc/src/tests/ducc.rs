@@ -3,6 +3,20 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 use value::Value;
+use bytes::Bytes;
+
+#[test]
+fn bytes_value() {
+    let ducc = Ducc::new();
+
+    // Standard buffer type
+    let _: () = ducc.exec("a = new Uint8Array();", None, ExecSettings::default()).unwrap();
+    let _: Bytes = ducc.globals().get("a").unwrap();
+
+    // Plain (Duktape's own) buffer type
+    let _: () = ducc.exec("b = Uint8Array.allocPlain(8);", None, ExecSettings::default()).unwrap();
+    let _: Bytes = ducc.globals().get("b").unwrap();
+}
 
 #[test]
 #[should_panic]
