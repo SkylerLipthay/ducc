@@ -2,6 +2,7 @@ use cesu8::from_cesu8;
 use error::{Error, Result};
 use ffi;
 use std::slice;
+use std::borrow::Cow;
 use std::string::String as StdString;
 use types::Ref;
 
@@ -17,6 +18,21 @@ impl<'ducc> String<'ducc> {
     pub fn to_string(&self) -> Result<StdString> {
         match from_cesu8(self.as_bytes()) {
             Ok(string) => Ok(string.into_owned()),
+            Err(_) => Err(Error::from_js_conversion("string", "String"))
+        }
+    }
+
+    /// Returns a Rust string converted from the Duktape string as long as it can be converted from
+    /// CESU-8 to UTF-8.
+    ///
+    /// If the underlying Duktape string is already a valid UTF-8 string, this function
+    /// will return a direct pointer to the underlying character data (i.e. no string data
+    /// will be cloned).
+    ///
+    /// Otherwise, returns a copy of the string converted to UTF-8.
+    pub fn to_str(&self) -> Result<Cow<str>> {
+        match from_cesu8(self.as_bytes()) {
+            Ok(string) => Ok(string),
             Err(_) => Err(Error::from_js_conversion("string", "String"))
         }
     }
