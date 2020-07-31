@@ -15,6 +15,8 @@ fn option() {
 
     let none: Option<usize> = FromValue::from_value(none_val.clone(), &ducc).unwrap();
     assert_eq!(none, None::<usize>);
+    let undefined: Option<usize> = FromValue::from_value(Value::Undefined, &ducc).unwrap();
+    assert_eq!(undefined, None::<usize>);
     let some_num: Option<usize> = FromValue::from_value(num_val.clone(), &ducc).unwrap();
     assert_eq!(some_num, Some(123));
     let num: usize = FromValue::from_value(num_val.clone(), &ducc).unwrap();
