@@ -1,8 +1,8 @@
 use cesu8::from_cesu8;
 use error::{Error, Result};
 use ffi;
-use std::slice;
 use std::borrow::Cow;
+use std::slice;
 use std::string::String as StdString;
 use types::Ref;
 
@@ -31,10 +31,7 @@ impl<'ducc> String<'ducc> {
     ///
     /// Otherwise, returns a copy of the string converted to UTF-8.
     pub fn to_str(&self) -> Result<Cow<str>> {
-        match from_cesu8(self.as_bytes()) {
-            Ok(string) => Ok(string),
-            Err(_) => Err(Error::from_js_conversion("string", "String"))
-        }
+        from_cesu8(self.as_bytes()).map_err(|_| Error::from_js_conversion("string", "Cow<str>"))
     }
 
     /// Returns the bytes that make up this string, without a trailing nul byte. This is a CESU-8
