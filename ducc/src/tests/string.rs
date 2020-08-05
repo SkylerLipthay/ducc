@@ -18,3 +18,15 @@ fn compare() {
     with_str("test", |s| assert_eq!(s, Cow::from(b"test".to_vec()))); // Cow (owned)
     with_str("test", |s| assert_eq!(s, s)); // ducc::String
 }
+
+#[test]
+fn nocopy_string() {
+    let ducc = Ducc::new();
+    let string1 = ducc.create_string("foo").unwrap();
+    let string2 = ducc.create_string("foo").unwrap();
+
+    assert!(std::ptr::eq(
+        string1.to_str().unwrap().as_ref(),
+        string2.to_str().unwrap().as_ref()
+    ));
+}
