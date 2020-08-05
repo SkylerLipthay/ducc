@@ -34,3 +34,10 @@ is set.
 ### `ducc_exec_timeout_function`
 
 The callback type for `duk_set_exec_timeout_function`.
+
+## Upgrading Duktape
+
+1. Download a release from https://duktape.org/download.html
+2. Copy files from `src/` to `ducc-sys/duktape/` (except `duk_config.h`, which should be copied to `duk_config_default.h`)
+3. Generate FFI bindings: `cargo run --features="build-ffi-gen" --bin ffi-gen`
+    - If on OS X and having trouble (e.g. missing header files), try setting `DUCC_SYSTEM_SDK_PATH=$(xcrun --sdk macosx --show-sdk-path)`
