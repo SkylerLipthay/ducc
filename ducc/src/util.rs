@@ -173,6 +173,7 @@ pub(crate) unsafe fn pop_error(ctx: *mut ffi::duk_context) -> Error {
                 kind: ErrorKind::RuntimeError {
                     code: RuntimeErrorCode::Error,
                     name: "Error".to_string(),
+                    stack: None
                 },
                 context: vec![],
             };
@@ -204,6 +205,9 @@ pub(crate) unsafe fn pop_error(ctx: *mut ffi::duk_context) -> Error {
         ffi::duk_get_prop_string(ctx, -1, cstr!("message"));
         let message = get_string(ctx, -1);
         ffi::duk_pop(ctx);
+        ffi::duk_get_prop_string(ctx, -1, cstr!("stack"));
+        let stack = get_string(ctx, -1);
+        ffi::duk_pop(ctx);
 
         let name = match name.is_empty() {
             false => name,
@@ -215,10 +219,15 @@ pub(crate) unsafe fn pop_error(ctx: *mut ffi::duk_context) -> Error {
             true => vec![],
         };
 
+        let stack = match stack.is_empty() {
+            false => Some(stack),
+            true => None,
+        };
+
         ffi::duk_pop(ctx);
 
         Error {
-            kind: ErrorKind::RuntimeError { code, name },
+            kind: ErrorKind::RuntimeError { code, name, stack },
             context: message,
         }
     })

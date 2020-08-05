@@ -2,6 +2,7 @@ use ducc::{Ducc, ExecSettings};
 use ffi;
 use value::Value;
 use util::*;
+use error::{Error, ErrorKind};
 
 #[test]
 fn test_assert_stack() {
@@ -81,4 +82,16 @@ fn test_throw_non_object_error() {
     assert!(ducc.exec::<Value>("throw true", None, ExecSettings::default()).is_err());
     assert!(ducc.exec::<Value>("throw undefined", None, ExecSettings::default()).is_err());
     assert!(ducc.exec::<Value>("throw null", None, ExecSettings::default()).is_err());
+}
+
+#[test]
+fn test_pop_error_stack() {
+    let ducc = Ducc::new();
+    let stack = match ducc.exec::<Value>("(function woah() { throw new TypeError('nope') })()", Some("file"), ExecSettings::default()) {
+        Err(Error { kind: ErrorKind::RuntimeError { stack: Some(stack), ..}, .. }) => {
+            stack
+        },
+        _ => panic!()
+    };
+    assert!(stack.contains("woah"));
 }
