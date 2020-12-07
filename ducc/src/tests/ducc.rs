@@ -89,6 +89,20 @@ fn user_data_get() {
 }
 
 #[test]
+fn cleanup_ducc_reference() {
+    let ducc = Ducc::new();
+    let o = ducc.create_object();
+    ducc.globals().set("Fun", ducc.create_function(|inv| {
+        Ok(())
+    }));
+    let _: () = ducc.exec(r#"
+        const subClass = (function() {});
+        subClass.__proto__ = Fun;
+    "#, None, ExecSettings::default()).unwrap();
+}
+
+
+#[test]
 fn user_data_remove() {
     let mut ducc = Ducc::new();
     let (count, data) = make_test_user_data();
